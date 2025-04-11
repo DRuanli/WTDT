@@ -426,7 +426,8 @@ class NoteController {
             echo json_encode([
                 'success' => $result['success'],
                 'message' => $result['message'],
-                'is_pinned' => $result['is_pinned'] ?? false
+                'is_pinned' => $result['is_pinned'] ?? false,
+                'pin_time' => $result['pin_time'] ?? null
             ]);
             exit;
         } else {

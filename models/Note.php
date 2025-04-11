@@ -28,8 +28,9 @@ class Note {
             $types .= "ss";
         }
         
-        // Order by pinned status first, then by pin time (most recent pins first), then by last modified date
-        $query .= " ORDER BY n.is_pinned DESC, n.pin_time DESC, n.updated_at DESC";
+        // Order by pinned status first, then by pin time for pinned notes (DESC to get most recently pinned on top),
+        // then by last modified date for unpinned notes (DESC to get most recently modified on top)
+        $query .= " ORDER BY n.is_pinned DESC, CASE WHEN n.is_pinned = 1 THEN n.pin_time END DESC, CASE WHEN n.is_pinned = 0 THEN n.updated_at END DESC";
         
         $stmt = $this->db->prepare($query);
         $stmt->bind_param($types, ...$params);
@@ -137,7 +138,6 @@ class Note {
         
         $current_status = $row['is_pinned'];
         $new_status = $current_status ? 0 : 1;
-        $pin_time = null;
         
         if ($new_status) {
             // If pinning, set current time as pin_time
@@ -154,7 +154,8 @@ class Note {
             return [
                 'success' => true,
                 'is_pinned' => (bool) $new_status,
-                'message' => $new_status ? 'Note pinned successfully' : 'Note unpinned successfully'
+                'message' => $new_status ? 'Note pinned successfully' : 'Note unpinned successfully',
+                'pin_time' => $new_status ? $pin_time : null
             ];
         }
         
