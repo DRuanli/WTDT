@@ -28,9 +28,8 @@ class Note {
             $types .= "ss";
         }
         
-        // Order by pinned status first, then by pin time for pinned notes (DESC to get most recently pinned on top),
-        // then by last modified date for unpinned notes (DESC to get most recently modified on top)
-        $query .= " ORDER BY n.is_pinned DESC, CASE WHEN n.is_pinned = 1 THEN n.pin_time END DESC, CASE WHEN n.is_pinned = 0 THEN n.updated_at END DESC";
+        // Order by pinned status first, then by pin time (most recent pins first), then by last modified date
+        $query .= " ORDER BY n.is_pinned DESC, n.pin_time DESC, n.updated_at DESC";
         
         $stmt = $this->db->prepare($query);
         $stmt->bind_param($types, ...$params);
@@ -45,6 +44,9 @@ class Note {
             // Get image count for each note
             $row['image_count'] = $this->getNoteImageCount($row['id']);
             
+            // Get attachments for each note
+            $row['attachments'] = $this->getNoteImages($row['id']);
+            
             // Add shared status to note data
             $row['is_shared'] = $this->isSharedWithOthers($row['id']);
             
@@ -53,8 +55,8 @@ class Note {
         
         return $notes;
     }
-    
-    // Get a note by ID
+
+    // Also update the getById method to include attachments
     public function getById($id) {
         $stmt = $this->db->prepare("SELECT * FROM notes WHERE id = ?");
         $stmt->bind_param("i", $id);
@@ -63,8 +65,13 @@ class Note {
         
         if ($result->num_rows === 1) {
             $note = $result->fetch_assoc();
+            
+            // Add image attachments
+            $note['images'] = $this->getNoteImages($id);
+            
             // Add shared status
             $note['is_shared'] = $this->isSharedWithOthers($id);
+            
             return $note;
         }
         

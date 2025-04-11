@@ -1,5 +1,12 @@
+<?php
+// This is the grid view template for displaying notes
+
+// Make sure we have the notes array available
+$notes = $data['notes'] ?? [];
+?>
+
 <div class="notes-grid">
-    <?php foreach ($data['notes'] as $note): ?>
+    <?php foreach ($notes as $note): ?>
         <div class="note-card <?= isset($note['is_pinned']) && $note['is_pinned'] ? 'pinned' : '' ?>">
             <div class="note-actions">
                 <button class="pin-note" data-id="<?= $note['id'] ?>" title="<?= isset($note['is_pinned']) && $note['is_pinned'] ? 'Unpin' : 'Pin' ?>">
@@ -43,6 +50,45 @@
                     <?php endif; ?>
                 </h3>
                 
+                <?php 
+                // Display attachments if available
+                if (isset($note['images']) && !empty($note['images'])): 
+                    $displayLimit = 3; // Maximum number of images to display
+                    $count = 0;
+                ?>
+                <div class="note-attachments mb-2">
+                    <div class="attachment-previews d-flex gap-2 flex-wrap">
+                        <?php foreach ($note['images'] as $attachment): 
+                            if ($count >= $displayLimit) break;
+                            
+                            $ext = pathinfo($attachment['file_path'], PATHINFO_EXTENSION);
+                            $isImage = in_array(strtolower($ext), ['jpg', 'jpeg', 'png', 'gif']);
+                            $count++;
+                        ?>
+                            <?php if ($isImage): ?>
+                                <div class="attachment-thumbnail">
+                                    <img src="<?= UPLOADS_URL . '/' . $attachment['file_path'] ?>" 
+                                         alt="<?= htmlspecialchars($attachment['file_name']) ?>"
+                                         class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;">
+                                </div>
+                            <?php else: ?>
+                                <div class="file-icon-small rounded p-1 bg-light text-center" style="width: 60px; height: 60px;">
+                                    <i class="fas fa-file fa-2x text-secondary mt-1"></i>
+                                    <div class="file-ext small">.<?= strtoupper($ext) ?></div>
+                                </div>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                        
+                        <?php if (count($note['images']) > $displayLimit): ?>
+                            <div class="more-attachments rounded-circle bg-light d-flex align-items-center justify-content-center" 
+                                style="width: 60px; height: 60px;">
+                                <span class="text-secondary">+<?= count($note['images']) - $displayLimit ?></span>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+                
                 <div class="note-body">
                     <?php 
                     $content = isset($note['content']) ? $note['content'] : '';
@@ -78,8 +124,8 @@
                         <?php endif; ?>
                         
                         <?php if (isset($note['image_count']) && $note['image_count'] > 0): ?>
-                            <span class="indicator" title="<?= $note['image_count'] ?> image(s) attached">
-                                <i class="fas fa-image"></i> <?= $note['image_count'] ?>
+                            <span class="indicator" title="<?= $note['image_count'] ?> attachment(s)">
+                                <i class="fas fa-paperclip"></i> <?= $note['image_count'] ?>
                             </span>
                         <?php endif; ?>
                     </div>

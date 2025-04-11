@@ -1,11 +1,20 @@
+<?php
+// This is the edit.php view file for notes
+
+// Make sure we have the note data available
+$note = $data['note'] ?? ['title' => '', 'content' => ''];
+$errors = $data['errors'] ?? [];
+$formAction = isset($note['id']) ? BASE_URL . '/notes/update/' . $note['id'] : BASE_URL . '/notes/store';
+?>
+
 <div class="row">
     <div class="col-md-10 mx-auto">
         <div class="card shadow-sm">
             <div class="card-header bg-white">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0"><?= isset($data['note']['id']) ? 'Edit Note' : 'Create Note' ?></h4>
+                    <h4 class="mb-0"><?= isset($note['id']) ? 'Edit Note' : 'Create Note' ?></h4>
                     <div>
-                        <?php if (!isset($data['note']['id'])): ?>
+                        <?php if (!isset($note['id'])): ?>
                             <!-- Show Create button only for new notes -->
                             <button type="button" id="create-note-btn" class="btn btn-primary me-2">
                                 <i class="fas fa-plus me-1"></i> Create
@@ -18,10 +27,10 @@
                 </div>
             </div>
             
-            <form id="note-form" method="POST" action="<?= isset($data['note']['id']) ? BASE_URL . '/notes/update/' . $data['note']['id'] : BASE_URL . '/notes/store' ?>">
-                <?php if (!empty($data['errors']['general'])): ?>
+            <form id="note-form" method="POST" action="<?= $formAction ?>" enctype="multipart/form-data">
+                <?php if (!empty($errors['general'])): ?>
                     <div class="alert alert-danger m-3">
-                        <?= $data['errors']['general'] ?>
+                        <?= $errors['general'] ?>
                     </div>
                 <?php endif; ?>
                 
@@ -31,10 +40,10 @@
                         <input type="text" name="title" id="note-title" 
                                class="form-control form-control-lg border-0 shadow-none" 
                                placeholder="Note title" 
-                               value="<?= htmlspecialchars($data['note']['title'] ?? '') ?>" 
+                               value="<?= htmlspecialchars($note['title'] ?? '') ?>" 
                                required>
-                        <?php if (!empty($data['errors']['title'])): ?>
-                            <div class="invalid-feedback d-block"><?= $data['errors']['title'] ?></div>
+                        <?php if (!empty($errors['title'])): ?>
+                            <div class="invalid-feedback d-block"><?= $errors['title'] ?></div>
                         <?php endif; ?>
                     </div>
                     
@@ -43,7 +52,80 @@
                         <textarea name="content" id="note-content" 
                                   class="form-control border-0 shadow-none" 
                                   placeholder="Note content..." 
-                                  rows="12"><?= htmlspecialchars($data['note']['content'] ?? '') ?></textarea>
+                                  rows="12"><?= htmlspecialchars($note['content'] ?? '') ?></textarea>
+                    </div>
+                    
+                    <!-- File Attachment Section -->
+                    <div class="mt-4 mb-3">
+                        <h5 class="mb-3"><i class="fas fa-paperclip me-2"></i>Attachments</h5>
+
+                        <!-- Current Images/Files Section (if editing) -->
+                        <?php if (isset($note['images']) && !empty($note['images'])): ?>
+                            <div class="mb-3">
+                                <h6>Current Attachments</h6>
+                                <div class="d-flex flex-wrap gap-3 mt-3 mb-4">
+                                    <?php foreach ($note['images'] as $image): ?>
+                                        <div class="attachment-preview card">
+                                            <div class="card-body p-2 text-center">
+                                                <?php
+                                                $ext = pathinfo($image['file_path'], PATHINFO_EXTENSION);
+                                                $isImage = in_array(strtolower($ext), ['jpg', 'jpeg', 'png', 'gif']);
+                                                ?>
+                                                
+                                                <?php if ($isImage): ?>
+                                                    <div class="image-thumbnail mb-2">
+                                                        <img src="<?= UPLOADS_URL . '/' . $image['file_path'] ?>" 
+                                                             alt="<?= htmlspecialchars($image['file_name']) ?>"
+                                                             class="img-thumbnail" style="max-width: 100px; max-height: 100px;">
+                                                    </div>
+                                                <?php else: ?>
+                                                    <div class="file-icon mb-2">
+                                                        <i class="fas fa-file-alt fa-3x text-secondary"></i>
+                                                    </div>
+                                                <?php endif; ?>
+                                                
+                                                <div class="file-name small text-truncate" style="max-width: 120px;">
+                                                    <?= htmlspecialchars($image['file_name']) ?>
+                                                </div>
+                                                
+                                                <div class="mt-2">
+                                                    <a href="<?= BASE_URL ?>/notes/delete-image/<?= $image['id'] ?>" 
+                                                       class="btn btn-sm btn-outline-danger delete-image"
+                                                       data-id="<?= $image['id'] ?>">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+
+                        <!-- New File Upload -->
+                        <div class="file-upload-container">
+                            <div class="custom-file-upload mb-3">
+                                <div class="upload-area p-4 rounded border border-dashed text-center" id="upload-area">
+                                    <i class="fas fa-cloud-upload-alt fa-3x text-secondary mb-3"></i>
+                                    <h5>Drag & Drop Files Here</h5>
+                                    <p class="text-muted">or</p>
+                                    <label for="file-input" class="btn btn-outline-primary">Browse Files</label>
+                                    <input id="file-input" name="images[]" type="file" class="d-none" multiple>
+                                    <p class="small text-muted mt-2">Supported formats: Images, PDFs, docs, and other common file formats<br>Max size: 10MB per file</p>
+                                </div>
+                            </div>
+
+                            <!-- Preview for newly added files -->
+                            <div id="preview-container" class="d-flex flex-wrap gap-3 mt-3" style="display: none;"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Submit buttons -->
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a href="<?= BASE_URL ?>/notes" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> <?= isset($note['id']) ? 'Save Changes' : 'Create Note' ?>
+                        </button>
                     </div>
                 </div>
             </form>
@@ -61,191 +143,3 @@
         </div>
     </div>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Auto-save functionality
-    const noteForm = document.getElementById('note-form');
-    const titleInput = document.getElementById('note-title');
-    const contentInput = document.getElementById('note-content');
-    const saveStatus = document.getElementById('save-status');
-    const savingIcon = document.getElementById('saving-icon');
-    const savedIcon = document.getElementById('saved-icon');
-    const saveMessage = document.getElementById('save-message');
-    const createButton = document.getElementById('create-note-btn');
-    
-    let saveTimeout;
-    let lastSavedContent = contentInput.value;
-    let lastSavedTitle = titleInput.value;
-    let autoSaveEnabled = <?= isset($data['note']['id']) ? 'true' : 'false' ?>;
-    let lastSaveTime = Date.now();
-    const minTimeBetweenSaves = 1000; // At least 1 second between saves to prevent excessive requests
-    
-    // Add event listener for unload event to prevent data loss
-    window.addEventListener('beforeunload', function(e) {
-        if (autoSaveEnabled && 
-            (lastSavedContent !== contentInput.value || lastSavedTitle !== titleInput.value) &&
-            titleInput.value.trim() !== '') {
-            // Auto-save before leaving page
-            saveChanges(true); // Force save before unload
-            
-            // Show warning if there are unsaved changes
-            const message = 'You have unsaved changes. Are you sure you want to leave?';
-            e.returnValue = message;
-            return message;
-        }
-    });
-    
-    function showSaveStatus(status, message) {
-        saveStatus.style.display = 'block';
-        
-        if (status === 'saving') {
-            savingIcon.style.display = 'inline-block';
-            savedIcon.style.display = 'none';
-            saveMessage.textContent = message || 'Saving...';
-            saveStatus.classList.add('bg-dark', 'text-white');
-            saveStatus.classList.remove('bg-success', 'bg-danger');
-        } else if (status === 'saved') {
-            savingIcon.style.display = 'none';
-            savedIcon.style.display = 'inline-block';
-            saveMessage.textContent = message || 'Saved';
-            saveStatus.classList.remove('bg-dark', 'bg-danger');
-            saveStatus.classList.add('bg-success', 'text-white');
-            
-            // Hide after 2 seconds
-            setTimeout(() => {
-                saveStatus.style.opacity = '0';
-                setTimeout(() => {
-                    saveStatus.style.display = 'none';
-                    saveStatus.style.opacity = '1';
-                }, 300);
-            }, 2000);
-        } else if (status === 'error') {
-            savingIcon.style.display = 'none';
-            savedIcon.style.display = 'none';
-            saveMessage.textContent = message || 'Error saving';
-            saveStatus.classList.remove('bg-dark', 'bg-success');
-            saveStatus.classList.add('bg-danger', 'text-white');
-            
-            // Hide after 3 seconds
-            setTimeout(() => {
-                saveStatus.style.opacity = '0';
-                setTimeout(() => {
-                    saveStatus.style.display = 'none';
-                    saveStatus.style.opacity = '1';
-                }, 300);
-            }, 3000);
-        }
-    }
-    
-    function saveChanges(force = false) {
-        // Auto-save if content has changed and title is not empty
-        if ((lastSavedContent !== contentInput.value || lastSavedTitle !== titleInput.value) &&
-            titleInput.value.trim() !== '') {
-            
-            const now = Date.now();
-            // Skip if we just saved recently, unless force=true
-            if (!force && now - lastSaveTime < minTimeBetweenSaves) {
-                return;
-            }
-            
-            lastSaveTime = now;
-            
-            // Show saving indicator
-            showSaveStatus('saving');
-            
-            const formData = new FormData(noteForm);
-            
-            // Send AJAX request
-            fetch(noteForm.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update last saved content
-                    lastSavedContent = contentInput.value;
-                    lastSavedTitle = titleInput.value;
-                    
-                    // Show saved indicator
-                    showSaveStatus('saved');
-                    
-                    // If this was a new note, redirect to edit page for this note
-                    if (data.note_id && !window.location.href.includes('/edit/')) {
-                        // Enable auto-save after successful creation
-                        autoSaveEnabled = true;
-                        window.location.href = BASE_URL + '/notes/edit/' + data.note_id;
-                    }
-                } else {
-                    // Show error indicator
-                    showSaveStatus('error', data.errors?.general || 'Error saving');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showSaveStatus('error', 'Network error');
-                
-                // Retry after a delay
-                setTimeout(() => {
-                    saveChanges(true);
-                }, 3000);
-            });
-        }
-    }
-    
-    function autoSave() {
-        if (!autoSaveEnabled) return;
-        
-        // Clear any existing timeout
-        clearTimeout(saveTimeout);
-        
-        // Set a new timeout to save after 1 second of inactivity
-        saveTimeout = setTimeout(saveChanges, 1000);
-    }
-    
-    // Add event listeners for auto-save
-    titleInput.addEventListener('input', autoSave);
-    titleInput.addEventListener('blur', () => {
-        if (autoSaveEnabled) saveChanges(true); // Save immediately on blur
-    });
-    contentInput.addEventListener('input', autoSave);
-    contentInput.addEventListener('blur', () => {
-        if (autoSaveEnabled) saveChanges(true); // Save immediately on blur
-    });
-    
-    // Create button for new notes
-    if (createButton) {
-        createButton.addEventListener('click', function() {
-            if (titleInput.value.trim() === '') {
-                showSaveStatus('error', 'Title is required');
-                titleInput.focus();
-                return;
-            }
-            
-            // Manual form submission for new notes
-            noteForm.submit();
-        });
-    }
-    
-    // Initial save if coming to edit page with existing note
-    if (noteForm.action.includes('/update/')) {
-        // Set a timeout to allow page to fully load
-        setTimeout(() => {
-            // Only show status for new notes, not when initially loading existing notes
-            lastSavedContent = contentInput.value;
-            lastSavedTitle = titleInput.value;
-        }, 500);
-        
-        // Also save periodically regardless of changes (every 30 seconds)
-        setInterval(() => {
-            if (autoSaveEnabled && titleInput.value.trim() !== '') {
-                saveChanges(true);
-            }
-        }, 30000);
-    }
-});
-</script>

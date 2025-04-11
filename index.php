@@ -156,6 +156,10 @@ switch ($page) {
                 $can_edit = isset(explode('/', $url)[4]) ? explode('/', $url)[4] : 0;
                 $controller->updateShare($id, $share_id, $can_edit);
                 break;
+            case 'delete-image':
+                $id = isset(explode('/', $url)[2]) ? explode('/', $url)[2] : null;
+                $controller->deleteImage($id);
+                break;
             default:
                 $controller->index();
                 break;
