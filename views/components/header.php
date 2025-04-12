@@ -42,6 +42,10 @@ if (Session::isLoggedIn()) {
         <meta name="theme-color" content="#4a89dc">
     <?php endif; ?>
 </head>
+<script>
+    // Make PHP constants available to JavaScript
+    const BASE_URL = "<?= BASE_URL ?>";
+</script>
 <body class="d-flex flex-column min-vh-100 bg-light" data-bs-theme="<?= $theme ?>">
     <?php if (Session::isLoggedIn()): ?>
     <header>
