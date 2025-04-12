@@ -89,6 +89,13 @@ switch ($page) {
         $controller->verifyOTP();
         break;
     
+    case 'upload-avatar':
+        $controller->uploadAvatar();
+        break;
+    case 'save-preferences':
+        $controller->savePreferences();
+        break;  
+
     case 'reset-password':
         include_once 'controllers/AuthController.php';
         $controller = new AuthController();
@@ -206,12 +213,6 @@ switch ($page) {
                 break;
             case 'preferences':
                 $controller->preferences();
-                break;
-            case 'upload-avatar':
-                $controller->uploadAvatar();
-                break;
-            case 'save-preferences':
-                $controller->savePreferences();
                 break;
             default:
                 $controller->index();

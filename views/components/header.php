@@ -41,55 +41,6 @@ if (Session::isLoggedIn()) {
         <link rel="manifest" href="<?= BASE_URL ?>/manifest.json">
         <meta name="theme-color" content="#4a89dc">
     <?php endif; ?>
-    
-    <?php if (Session::isLoggedIn()): 
-        // Apply user preferences
-        $userPreferences = (new User())->getUserPreferences(Session::getUserId());
-        $fontSize = $userPreferences['font_size'] ?? 'medium';
-        $noteColor = $userPreferences['note_color'] ?? 'white';
-        
-        // Font size CSS
-        $fontSizeCSS = '';
-        switch ($fontSize) {
-            case 'small':
-                $fontSizeCSS = '.note-content { font-size: 0.875rem; } .note-card .note-body { font-size: 0.875rem; }';
-                break;
-            case 'medium':
-                $fontSizeCSS = '.note-content { font-size: 1rem; } .note-card .note-body { font-size: 1rem; }';
-                break;
-            case 'large':
-                $fontSizeCSS = '.note-content { font-size: 1.125rem; } .note-card .note-body { font-size: 1.125rem; }';
-                break;
-        }
-        
-        // Note color CSS
-        $noteColorCSS = '';
-        switch ($noteColor) {
-            case 'white':
-                $noteColorCSS = '.note-card { background-color: #fff; }';
-                break;
-            case 'blue':
-                $noteColorCSS = '.note-card { background-color: #f0f7ff; }';
-                break;
-            case 'green':
-                $noteColorCSS = '.note-card { background-color: #f0fff5; }';
-                break;
-            case 'yellow':
-                $noteColorCSS = '.note-card { background-color: #fffcf0; }';
-                break;
-            case 'purple':
-                $noteColorCSS = '.note-card { background-color: #f2e6ff; }';
-                break;
-            case 'pink':
-                $noteColorCSS = '.note-card { background-color: #ffe6f2; }';
-                break;
-        }
-    ?>
-    <style>
-        <?= $fontSizeCSS ?>
-        <?= $noteColorCSS ?>
-    </style>
-    <?php endif; ?>
 </head>
 <body class="d-flex flex-column min-vh-100 bg-light" data-bs-theme="<?= $theme ?>">
     <?php if (Session::isLoggedIn()): ?>
@@ -154,21 +105,8 @@ if (Session::isLoggedIn()) {
     <?php 
     // Notification for unverified accounts
     if (Session::isLoggedIn()): 
-        // Check activation status from session
-        $isActivated = Session::get('is_activated', 0);
-        
-        // If not activated in session, check database
-        if (!$isActivated) {
-            $user = (new User())->getUserById(Session::getUserId());
-            $isActivated = $user && $user['is_activated'];
-            
-            // Update session if activated in database
-            if ($isActivated) {
-                Session::set('is_activated', 1);
-            }
-        }
-        
-        if (!$isActivated):
+        $user = (new User())->getUserById(Session::getUserId());
+        if ($user && !$user['is_activated']):
     ?>
     <div class="alert alert-warning text-center mb-0 rounded-0">
         Your account is not verified. Please check your email to complete the activation process.

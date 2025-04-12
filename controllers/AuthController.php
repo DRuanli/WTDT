@@ -53,9 +53,6 @@ class AuthController {
                     // Set auth session
                     Session::setAuth($result['user_id'], $email, $result['display_name']);
                     
-                    // Set activation status in session
-                    Session::set('is_activated', $result['is_activated']);
-                    
                     // Extend session if "remember me" is checked
                     if ($remember) {
                         ini_set('session.cookie_lifetime', 30 * 24 * 60 * 60); // 30 days
@@ -134,9 +131,6 @@ class AuthController {
                     
                     // Set auth session (auto-login)
                     Session::setAuth($result['user_id'], $email, $display_name);
-                    
-                    // Set activation status in session
-                    Session::set('is_activated', 0);
                     
                     // Set flash message
                     Session::setFlash('success', 'Registration successful! Please check your email to activate your account.');
@@ -269,28 +263,9 @@ class AuthController {
             }
             
             if (empty($data['errors'])) {
-                $result = null;
+                $result = $this->user->resetPassword($email, $token, $password);
                 
-                // Check if we're using OTP verification method
-                $resetMethod = Session::get('reset_method', 'token');
-                $resetVerified = Session::get('reset_verified', false);
-                $resetEmail = Session::get('reset_email', '');
-                
-                if ($resetMethod === 'otp' && $resetVerified && $resetEmail === $email) {
-                    // Use OTP-based reset
-                    $result = $this->user->resetPasswordWithOTP($email, Session::get('otp', ''), $password);
-                    
-                    // Clear session variables
-                    Session::remove('reset_verified');
-                    Session::remove('reset_email');
-                    Session::remove('reset_method');
-                    Session::remove('otp');
-                } else {
-                    // Use token-based reset
-                    $result = $this->user->resetPassword($email, $token, $password);
-                }
-                
-                if ($result && $result['success']) {
+                if ($result['success']) {
                     // Set flash message
                     Session::setFlash('success', 'Your password has been reset successfully. You can now login with your new password.');
                     
@@ -298,7 +273,7 @@ class AuthController {
                     header('Location: ' . BASE_URL . '/login');
                     exit;
                 } else {
-                    $data['errors']['general'] = isset($result['message']) ? $result['message'] : 'Failed to reset password';
+                    $data['errors']['general'] = $result['message'];
                 }
             }
         }
