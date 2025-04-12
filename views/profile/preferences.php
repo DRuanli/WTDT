@@ -1,3 +1,10 @@
+<?php
+// Get current preferences
+$current_theme = $data['preferences']['theme'] ?? 'light';
+$current_font_size = $data['preferences']['font_size'] ?? 'medium';
+$current_note_color = $data['preferences']['note_color'] ?? 'white';
+?>
+
 <div class="row">
     <div class="col-lg-10 mx-auto">
         <div class="d-md-flex justify-content-between align-items-center mb-4">
@@ -38,12 +45,6 @@
                             <i class="fas fa-sticky-note me-2"></i>Notes Settings
                         </button>
                     </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="notifications-tab" data-bs-toggle="tab" data-bs-target="#notifications" 
-                                type="button" role="tab" aria-controls="notifications" aria-selected="false">
-                            <i class="fas fa-bell me-2"></i>Notifications
-                        </button>
-                    </li>
                 </ul>
             </div>
             
@@ -56,11 +57,12 @@
                             
                             <div class="mb-4">
                                 <label class="form-label fw-bold">Theme</label>
-                                <div class="row row-cols-1 row-cols-md-3 g-3">
+                                <div class="row row-cols-1 row-cols-md-2 g-3">
                                     <div class="col">
                                         <div class="form-check card">
                                             <div class="card-body">
-                                                <input class="form-check-input" type="radio" name="theme" id="theme-light" value="light" checked>
+                                                <input class="form-check-input" type="radio" name="theme" id="theme-light" value="light" 
+                                                       <?= $current_theme === 'light' ? 'checked' : '' ?>>
                                                 <label class="form-check-label w-100" for="theme-light">
                                                     <div class="d-flex align-items-center mb-2">
                                                         <i class="fas fa-sun me-2 text-warning"></i>
@@ -78,7 +80,8 @@
                                     <div class="col">
                                         <div class="form-check card">
                                             <div class="card-body">
-                                                <input class="form-check-input" type="radio" name="theme" id="theme-dark" value="dark">
+                                                <input class="form-check-input" type="radio" name="theme" id="theme-dark" value="dark"
+                                                       <?= $current_theme === 'dark' ? 'checked' : '' ?>>
                                                 <label class="form-check-label w-100" for="theme-dark">
                                                     <div class="d-flex align-items-center mb-2">
                                                         <i class="fas fa-moon me-2 text-primary"></i>
@@ -92,24 +95,6 @@
                                             </div>
                                         </div>
                                     </div>
-                                    
-                                    <div class="col">
-                                        <div class="form-check card">
-                                            <div class="card-body">
-                                                <input class="form-check-input" type="radio" name="theme" id="theme-system" value="system">
-                                                <label class="form-check-label w-100" for="theme-system">
-                                                    <div class="d-flex align-items-center mb-2">
-                                                        <i class="fas fa-laptop me-2 text-info"></i>
-                                                        <strong>System Default</strong>
-                                                    </div>
-                                                    <div class="theme-preview bg-light border p-2 text-center rounded">
-                                                        <div class="bg-white border mb-1 p-1">Auto</div>
-                                                        <small class="text-dark">Follow system settings</small>
-                                                    </div>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                             
@@ -118,7 +103,8 @@
                                 <div class="row row-cols-1 row-cols-md-3 g-3">
                                     <div class="col">
                                         <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="font_size" id="font-small" value="small">
+                                            <input class="form-check-input" type="radio" name="font_size" id="font-small" value="small"
+                                                  <?= $current_font_size === 'small' ? 'checked' : '' ?>>
                                             <label class="form-check-label" for="font-small">
                                                 <span style="font-size: 0.875rem;">Small</span>
                                             </label>
@@ -127,7 +113,8 @@
                                     
                                     <div class="col">
                                         <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="font_size" id="font-medium" value="medium" checked>
+                                            <input class="form-check-input" type="radio" name="font_size" id="font-medium" value="medium"
+                                                  <?= $current_font_size === 'medium' ? 'checked' : '' ?>>
                                             <label class="form-check-label" for="font-medium">
                                                 <span style="font-size: 1rem;">Medium</span>
                                             </label>
@@ -136,7 +123,8 @@
                                     
                                     <div class="col">
                                         <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="font_size" id="font-large" value="large">
+                                            <input class="form-check-input" type="radio" name="font_size" id="font-large" value="large"
+                                                  <?= $current_font_size === 'large' ? 'checked' : '' ?>>
                                             <label class="form-check-label" for="font-large">
                                                 <span style="font-size: 1.125rem;">Large</span>
                                             </label>
@@ -151,117 +139,55 @@
                             <h5 class="card-title mb-4">Notes Display Settings</h5>
                             
                             <div class="mb-4">
-                                <label class="form-label fw-bold">Default Note View</label>
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <div class="form-check card">
-                                            <div class="card-body">
-                                                <input class="form-check-input" type="radio" name="default_view" id="view-grid" value="grid" checked>
-                                                <label class="form-check-label w-100" for="view-grid">
-                                                    <div class="d-flex align-items-center">
-                                                        <i class="fas fa-th-large me-2 text-primary"></i>
-                                                        <strong>Grid View</strong>
-                                                    </div>
-                                                    <small class="text-muted d-block mt-2">Display notes in a grid layout like cards</small>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="col-md-6">
-                                        <div class="form-check card">
-                                            <div class="card-body">
-                                                <input class="form-check-input" type="radio" name="default_view" id="view-list" value="list">
-                                                <label class="form-check-label w-100" for="view-list">
-                                                    <div class="d-flex align-items-center">
-                                                        <i class="fas fa-list me-2 text-primary"></i>
-                                                        <strong>List View</strong>
-                                                    </div>
-                                                    <small class="text-muted d-block mt-2">Display notes in a compact list format</small>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="mb-4">
                                 <label class="form-label fw-bold">Note Color</label>
                                 <div class="d-flex flex-wrap gap-3">
                                     <div class="form-check">
-                                        <input class="form-check-input visually-hidden" type="radio" name="note_color" id="color-white" value="white" checked>
+                                        <input class="form-check-input visually-hidden" type="radio" name="note_color" id="color-white" value="white"
+                                              <?= $current_note_color === 'white' ? 'checked' : '' ?>>
                                         <label class="form-check-label" for="color-white">
                                             <div class="color-swatch bg-white border rounded-circle" style="width: 40px; height: 40px;"></div>
                                         </label>
                                     </div>
                                     
                                     <div class="form-check">
-                                        <input class="form-check-input visually-hidden" type="radio" name="note_color" id="color-blue" value="blue">
+                                        <input class="form-check-input visually-hidden" type="radio" name="note_color" id="color-blue" value="blue"
+                                              <?= $current_note_color === 'blue' ? 'checked' : '' ?>>
                                         <label class="form-check-label" for="color-blue">
                                             <div class="color-swatch bg-primary-subtle border rounded-circle" style="width: 40px; height: 40px;"></div>
                                         </label>
                                     </div>
                                     
                                     <div class="form-check">
-                                        <input class="form-check-input visually-hidden" type="radio" name="note_color" id="color-green" value="green">
+                                        <input class="form-check-input visually-hidden" type="radio" name="note_color" id="color-green" value="green"
+                                              <?= $current_note_color === 'green' ? 'checked' : '' ?>>
                                         <label class="form-check-label" for="color-green">
                                             <div class="color-swatch bg-success-subtle border rounded-circle" style="width: 40px; height: 40px;"></div>
                                         </label>
                                     </div>
                                     
                                     <div class="form-check">
-                                        <input class="form-check-input visually-hidden" type="radio" name="note_color" id="color-yellow" value="yellow">
+                                        <input class="form-check-input visually-hidden" type="radio" name="note_color" id="color-yellow" value="yellow"
+                                              <?= $current_note_color === 'yellow' ? 'checked' : '' ?>>
                                         <label class="form-check-label" for="color-yellow">
                                             <div class="color-swatch bg-warning-subtle border rounded-circle" style="width: 40px; height: 40px;"></div>
                                         </label>
                                     </div>
                                     
                                     <div class="form-check">
-                                        <input class="form-check-input visually-hidden" type="radio" name="note_color" id="color-purple" value="purple">
+                                        <input class="form-check-input visually-hidden" type="radio" name="note_color" id="color-purple" value="purple"
+                                              <?= $current_note_color === 'purple' ? 'checked' : '' ?>>
                                         <label class="form-check-label" for="color-purple">
-                                            <div class="color-swatch bg-purple border rounded-circle" style="width: 40px; height: 40px; background-color: #f2e6ff;"></div>
+                                            <div class="color-swatch border rounded-circle" style="width: 40px; height: 40px; background-color: #f2e6ff;"></div>
                                         </label>
                                     </div>
                                     
                                     <div class="form-check">
-                                        <input class="form-check-input visually-hidden" type="radio" name="note_color" id="color-pink" value="pink">
+                                        <input class="form-check-input visually-hidden" type="radio" name="note_color" id="color-pink" value="pink"
+                                              <?= $current_note_color === 'pink' ? 'checked' : '' ?>>
                                         <label class="form-check-label" for="color-pink">
-                                            <div class="color-swatch bg-pink border rounded-circle" style="width: 40px; height: 40px; background-color: #ffe6f2;"></div>
+                                            <div class="color-swatch border rounded-circle" style="width: 40px; height: 40px; background-color: #ffe6f2;"></div>
                                         </label>
                                     </div>
-                                </div>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" role="switch" id="auto-save" name="auto_save" value="1" checked>
-                                    <label class="form-check-label" for="auto-save">Enable auto-save when editing notes</label>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Notifications Tab -->
-                        <div class="tab-pane fade" id="notifications" role="tabpanel" aria-labelledby="notifications-tab">
-                            <h5 class="card-title mb-4">Notification Preferences</h5>
-                            
-                            <div class="mb-3">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" role="switch" id="email-notifications" name="email_notifications" value="1" checked>
-                                    <label class="form-check-label" for="email-notifications">Receive email notifications when notes are shared with me</label>
-                                </div>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" role="switch" id="browser-notifications" name="browser_notifications" value="1" checked>
-                                    <label class="form-check-label" for="browser-notifications">Show browser notifications for real-time updates</label>
-                                </div>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" role="switch" id="collaboration-notifications" name="collaboration_notifications" value="1" checked>
-                                    <label class="form-check-label" for="collaboration-notifications">Get notifications about changes to shared notes</label>
                                 </div>
                             </div>
                         </div>
@@ -321,3 +247,40 @@ input[type="radio"]:checked + label .theme-preview {
     cursor: pointer;
 }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Preview preferences on change
+    const themeRadios = document.querySelectorAll('input[name="theme"]');
+    const fontSizeRadios = document.querySelectorAll('input[name="font_size"]');
+    const noteColorRadios = document.querySelectorAll('input[name="note_color"]');
+    
+    // Preview theme
+    themeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            document.documentElement.setAttribute('data-bs-theme', this.value);
+            document.body.setAttribute('data-bs-theme', this.value);
+        });
+    });
+    
+    // Preview font size
+    fontSizeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            // Remove existing font size classes
+            document.body.classList.remove('font-size-small', 'font-size-medium', 'font-size-large');
+            // Add selected font size class
+            document.body.classList.add(`font-size-${this.value}`);
+        });
+    });
+    
+    // Preview note color
+    noteColorRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            // Remove existing note color classes
+            document.body.className = document.body.className.replace(/\bnote-color-\S+/g, '');
+            // Add selected note color class
+            document.body.classList.add(`note-color-${this.value}`);
+        });
+    });
+});
+</script>

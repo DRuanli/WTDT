@@ -1,17 +1,40 @@
 <?php
 require_once MODELS_PATH . '/User.php';
 
-$theme = 'light'; // Default
+// Default preferences
+$theme = 'light';
+$font_size = 'medium';
+$note_color = 'white';
+
+// Get user preferences if logged in
 if (Session::isLoggedIn()) {
     $user_id = Session::getUserId();
     $userModel = new User();
     $preferences = $userModel->getUserPreferences($user_id);
+    
+    // Apply preferences
     $theme = $preferences['theme'] ?? 'light';
+    $font_size = $preferences['font_size'] ?? 'medium';
+    $note_color = $preferences['note_color'] ?? 'white';
+}
+
+// Font size classes
+$font_size_class = '';
+switch ($font_size) {
+    case 'small':
+        $font_size_class = 'font-size-small';
+        break;
+    case 'medium':
+        $font_size_class = 'font-size-medium';
+        break;
+    case 'large':
+        $font_size_class = 'font-size-large';
+        break;
 }
 ?>
 
 <!DOCTYPE html>
-<html lang="en" data-theme="<?= $theme ?>">
+<html lang="en" data-bs-theme="<?= $theme ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -41,12 +64,73 @@ if (Session::isLoggedIn()) {
         <link rel="manifest" href="<?= BASE_URL ?>/manifest.json">
         <meta name="theme-color" content="#4a89dc">
     <?php endif; ?>
+    
+    <!-- Custom preferences styles -->
+    <style>
+        /* Font size preferences */
+        .font-size-small {
+            font-size: 0.875rem !important;
+        }
+        .font-size-medium {
+            font-size: 1rem !important;
+        }
+        .font-size-large {
+            font-size: 1.125rem !important;
+        }
+        
+        /* Note color preferences */
+        .note-color-white .note-card {
+            background-color: #ffffff !important;
+        }
+        .note-color-blue .note-card {
+            background-color: #f0f5ff !important;
+        }
+        .note-color-green .note-card {
+            background-color: #f0fff5 !important;
+        }
+        .note-color-yellow .note-card {
+            background-color: #fffbeb !important;
+        }
+        .note-color-purple .note-card {
+            background-color: #f8f0ff !important;
+        }
+        .note-color-pink .note-card {
+            background-color: #fff0f7 !important;
+        }
+        
+        /* Dark mode adjustments for note colors */
+        [data-bs-theme="dark"] .note-color-white .note-card {
+            background-color: #2b2b2b !important;
+        }
+        [data-bs-theme="dark"] .note-color-blue .note-card {
+            background-color: #1a2035 !important;
+        }
+        [data-bs-theme="dark"] .note-color-green .note-card {
+            background-color: #1a2e22 !important;
+        }
+        [data-bs-theme="dark"] .note-color-yellow .note-card {
+            background-color: #2e2a1a !important;
+        }
+        [data-bs-theme="dark"] .note-color-purple .note-card {
+            background-color: #25192e !important;
+        }
+        [data-bs-theme="dark"] .note-color-pink .note-card {
+            background-color: #2e1923 !important;
+        }
+    </style>
 </head>
 <script>
     // Make PHP constants available to JavaScript
     const BASE_URL = "<?= BASE_URL ?>";
+    
+    // Make user preferences available to JavaScript
+    const USER_PREFERENCES = {
+        theme: "<?= $theme ?>",
+        font_size: "<?= $font_size ?>",
+        note_color: "<?= $note_color ?>"
+    };
 </script>
-<body class="d-flex flex-column min-vh-100 bg-light" data-bs-theme="<?= $theme ?>">
+<body class="d-flex flex-column min-vh-100 bg-light <?= $font_size_class ?> note-color-<?= $note_color ?>" data-bs-theme="<?= $theme ?>">
     <?php if (Session::isLoggedIn()): ?>
     <header>
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">

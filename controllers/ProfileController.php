@@ -221,9 +221,13 @@ class ProfileController {
     
     // Display and process user preferences form
     public function preferences() {
+        $user_id = Session::getUserId();
+        $preferences = $this->user->getUserPreferences($user_id);
+        
         // Set default data
         $data = [
             'pageTitle' => 'Preferences',
+            'preferences' => $preferences,
             'errors' => []
         ];
         
@@ -237,16 +241,19 @@ class ProfileController {
         $user_id = Session::getUserId();
         
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Get preferences from form
             $theme = isset($_POST['theme']) ? $_POST['theme'] : 'light';
             $font_size = isset($_POST['font_size']) ? $_POST['font_size'] : 'medium';
             $note_color = isset($_POST['note_color']) ? $_POST['note_color'] : 'white';
             
+            // Create preferences array
             $preferences = [
-                'font_size' => $font_size,
                 'theme' => $theme,
+                'font_size' => $font_size,
                 'note_color' => $note_color
             ];
             
+            // Save preferences
             $result = $this->user->updatePreferences($user_id, $preferences);
             
             if ($result['success']) {
@@ -255,6 +262,7 @@ class ProfileController {
                 Session::setFlash('error', $result['message']);
             }
             
+            // Redirect back to preferences page
             header('Location: ' . BASE_URL . '/profile/preferences');
             exit;
         }
