@@ -214,12 +214,18 @@ switch ($page) {
             case 'preferences':
                 $controller->preferences();
                 break;
+            case 'save-preferences':
+                $controller->savePreferences();
+                break;  
+            case 'upload-avatar':
+                $controller->uploadAvatar();
+                break;
             default:
                 $controller->index();
                 break;
         }
         break;
-        
+    
     // API routes for AJAX requests
     case 'api':
         header('Content-Type: application/json');
