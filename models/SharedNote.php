@@ -4,12 +4,13 @@ class SharedNote {
     
     public function __construct() {
         $this->db = getDB();
+        require_once ROOT_PATH . '/utils/Mailer.php';
     }
     
     // Share a note with another user
     public function shareNote($note_id, $owner_id, $recipient_email, $can_edit = false) {
         // First, check if the note exists and belongs to the owner
-        $stmt = $this->db->prepare("SELECT id FROM notes WHERE id = ? AND user_id = ?");
+        $stmt = $this->db->prepare("SELECT id, title FROM notes WHERE id = ? AND user_id = ?");
         $stmt->bind_param("ii", $note_id, $owner_id);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -21,8 +22,10 @@ class SharedNote {
             ];
         }
         
+        $note = $result->fetch_assoc();
+        
         // Find the recipient user by email
-        $stmt = $this->db->prepare("SELECT id, display_name FROM users WHERE email = ?");
+        $stmt = $this->db->prepare("SELECT id, display_name, email FROM users WHERE email = ?");
         $stmt->bind_param("s", $recipient_email);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -30,7 +33,7 @@ class SharedNote {
         if ($result->num_rows === 0) {
             return [
                 'success' => false,
-                'message' => 'Recipient user not found'
+                'message' => 'Recipient email not found. Please ensure you are sharing with a registered user.'
             ];
         }
         
@@ -62,6 +65,22 @@ class SharedNote {
             $stmt->bind_param("ii", $can_edit_int, $share_id);
             
             if ($stmt->execute()) {
+                // Get owner's name
+                $stmt = $this->db->prepare("SELECT display_name FROM users WHERE id = ?");
+                $stmt->bind_param("i", $owner_id);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $owner = $result->fetch_assoc();
+                
+                // Send email notification about permission change
+                sendSharePermissionChangedEmail(
+                    $recipient['email'],
+                    $recipient_name,
+                    $owner['display_name'],
+                    $note['title'],
+                    $can_edit ? 'edit' : 'view'
+                );
+                
                 return [
                     'success' => true,
                     'message' => 'Sharing permissions updated successfully'
@@ -80,13 +99,6 @@ class SharedNote {
         $stmt->bind_param("iiii", $note_id, $owner_id, $recipient_id, $can_edit_int);
         
         if ($stmt->execute()) {
-            // Get note title for email
-            $stmt = $this->db->prepare("SELECT title FROM notes WHERE id = ?");
-            $stmt->bind_param("i", $note_id);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $note = $result->fetch_assoc();
-            
             // Get owner's name
             $stmt = $this->db->prepare("SELECT display_name FROM users WHERE id = ?");
             $stmt->bind_param("i", $owner_id);
@@ -95,15 +107,13 @@ class SharedNote {
             $owner = $result->fetch_assoc();
             
             // Send email notification
-            if (function_exists('sendNoteSharedEmail')) {
-                sendNoteSharedEmail(
-                    $recipient_email,
-                    $recipient_name,
-                    $owner['display_name'],
-                    $note['title'],
-                    $can_edit ? 'edit' : 'view'
-                );
-            }
+            sendNoteSharedEmail(
+                $recipient['email'],
+                $recipient_name,
+                $owner['display_name'],
+                $note['title'],
+                $can_edit ? 'edit' : 'view'
+            );
             
             return [
                 'success' => true,
@@ -141,7 +151,13 @@ class SharedNote {
     // Remove sharing
     public function removeShare($share_id, $owner_id) {
         // First check if the share exists and user is the owner
-        $stmt = $this->db->prepare("SELECT id FROM shared_notes WHERE id = ? AND owner_id = ?");
+        $stmt = $this->db->prepare("
+            SELECT s.id, s.note_id, s.recipient_id, n.title, u.email, u.display_name 
+            FROM shared_notes s
+            JOIN notes n ON s.note_id = n.id
+            JOIN users u ON s.recipient_id = u.id
+            WHERE s.id = ? AND s.owner_id = ?
+        ");
         $stmt->bind_param("ii", $share_id, $owner_id);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -153,11 +169,23 @@ class SharedNote {
             ];
         }
         
+        $share = $result->fetch_assoc();
+        
         // Remove the share
         $stmt = $this->db->prepare("DELETE FROM shared_notes WHERE id = ?");
         $stmt->bind_param("i", $share_id);
         
         if ($stmt->execute()) {
+            // Get owner's name
+            $stmt = $this->db->prepare("SELECT display_name FROM users WHERE id = ?");
+            $stmt->bind_param("i", $owner_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $owner = $result->fetch_assoc();
+            
+            // Optionally notify user that sharing was removed
+            // sendShareRemovedEmail($share['email'], $share['display_name'], $owner['display_name'], $share['title']);
+            
             return [
                 'success' => true
             ];
@@ -171,9 +199,8 @@ class SharedNote {
     
     // Get notes shared with user
     public function getNotesSharedWithUser($user_id) {
-        // Fixed query to avoid column errors - use a simpler query
         $stmt = $this->db->prepare("
-            SELECT n.*, u.display_name as owner_name, u.email as owner_email, s.shared_at  
+            SELECT n.*, u.display_name as owner_name, u.email as owner_email, s.shared_at, s.can_edit  
             FROM notes n
             JOIN shared_notes s ON n.id = s.note_id
             JOIN users u ON s.owner_id = u.id
@@ -220,7 +247,13 @@ class SharedNote {
     // Update sharing permissions
     public function updateSharePermissions($share_id, $owner_id, $can_edit) {
         // First check if the share exists and user is the owner
-        $stmt = $this->db->prepare("SELECT note_id, recipient_id FROM shared_notes WHERE id = ? AND owner_id = ?");
+        $stmt = $this->db->prepare("
+            SELECT s.note_id, s.recipient_id, n.title, u.email, u.display_name 
+            FROM shared_notes s
+            JOIN notes n ON s.note_id = n.id
+            JOIN users u ON s.recipient_id = u.id
+            WHERE s.id = ? AND s.owner_id = ?
+        ");
         $stmt->bind_param("ii", $share_id, $owner_id);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -240,21 +273,7 @@ class SharedNote {
         $stmt->bind_param("ii", $can_edit_int, $share_id);
         
         if ($stmt->execute()) {
-            // Get recipient information for notification
-            $stmt = $this->db->prepare("SELECT email, display_name FROM users WHERE id = ?");
-            $stmt->bind_param("i", $share['recipient_id']);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $recipient = $result->fetch_assoc();
-            
-            // Get note information
-            $stmt = $this->db->prepare("SELECT title FROM notes WHERE id = ?");
-            $stmt->bind_param("i", $share['note_id']);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $note = $result->fetch_assoc();
-            
-            // Get owner's name
+            // Get owner information for notification
             $stmt = $this->db->prepare("SELECT display_name FROM users WHERE id = ?");
             $stmt->bind_param("i", $owner_id);
             $stmt->execute();
@@ -262,15 +281,13 @@ class SharedNote {
             $owner = $result->fetch_assoc();
             
             // Send email notification about permission change
-            if (function_exists('sendSharePermissionChangedEmail')) {
-                sendSharePermissionChangedEmail(
-                    $recipient['email'],
-                    $recipient['display_name'],
-                    $owner['display_name'],
-                    $note['title'],
-                    $can_edit ? 'edit' : 'view'
-                );
-            }
+            sendSharePermissionChangedEmail(
+                $share['email'],
+                $share['display_name'],
+                $owner['display_name'],
+                $share['title'],
+                $can_edit ? 'edit' : 'view'
+            );
             
             return [
                 'success' => true,

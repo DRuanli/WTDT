@@ -127,11 +127,6 @@ class NoteWebSocket {
                 }
             }
             
-            // Handle new shared notes notification
-            if (data.type === 'new_shared_notes' && data.count > 0) {
-                this.showSharedNotesNotification(data.notes);
-            }
-            
             // Call onMessage callback
             if (typeof this.options.onMessage === 'function') {
                 this.options.onMessage(data);
@@ -633,6 +628,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     } else if (data.type === 'user_left') {
                         // Show notification that a user left
                         showCollaborationToast(`${data.user_name} left the note`);
+                    } else if (data.type === 'new_shared_notes') {
+                        // Show notification for new shared notes
+                        window.noteWebSocket.showSharedNotesNotification(data.notes);
                     }
                 }
             });

@@ -1,14 +1,4 @@
 <?php
-require_once 'utils/Session.php';
-require_once 'utils/Validator.php';
-require_once 'utils/Security.php';
-require_once 'utils/Mailer.php';  // Make sure this is included
-
-// Check and load Composer's autoloader if available
-if (file_exists(ROOT_PATH . '/vendor/autoload.php')) {
-    require_once ROOT_PATH . '/vendor/autoload.php';
-}
-
 // Always declare the namespace aliases at the file level
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -179,8 +169,6 @@ function sendOTPEmail($user_email, $user_name, $otp) {
     }
 }
 
-// Add these functions to utils/Mailer.php
-
 // Send email notification for shared note
 function sendNoteSharedEmail($recipient_email, $recipient_name, $owner_name, $note_title, $permission_type) {
     $subject = "Note Shared With You - " . APP_NAME;
@@ -249,6 +237,43 @@ function sendSharePermissionChangedEmail($recipient_email, $recipient_name, $own
             <p>Your new permission level is: <span class='permission'>" . ($new_permission == 'edit' ? 'Edit Access' : 'View-Only Access') . "</span></p>
             <p>Log in to " . APP_NAME . " to access this shared note:</p>
             <p><a href='" . BASE_URL . "/notes/shared' class='button'>View Shared Notes</a></p>
+            <div class='footer'>
+                <p>Best regards,<br>The " . APP_NAME . " Team</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    ";
+    
+    // Use PHPMailer if available, otherwise use default function
+    if (hasPhpMailer()) {
+        return sendEmailWithPhpMailer($recipient_email, $subject, $message);
+    } else {
+        return sendEmail($recipient_email, $subject, $message);
+    }
+}
+
+// Send notification when sharing is removed
+function sendShareRemovedEmail($recipient_email, $recipient_name, $owner_name, $note_title) {
+    $subject = "Note Access Removed - " . APP_NAME;
+    
+    $message = "
+    <html>
+    <head>
+        <title>Note Access Removed</title>
+        <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .footer { margin-top: 30px; font-size: 12px; color: #777; }
+        </style>
+    </head>
+    <body>
+        <div class='container'>
+            <h2>Note Access Removed</h2>
+            <p>Hello " . htmlspecialchars($recipient_name) . ",</p>
+            <p><strong>" . htmlspecialchars($owner_name) . "</strong> has removed your access to the following note:</p>
+            <p style='font-size: 18px; padding: 10px; background-color: #f8f9fa; border-left: 4px solid #dc3545;'>\"" . htmlspecialchars($note_title) . "\"</p>
+            <p>You no longer have access to view or edit this note.</p>
             <div class='footer'>
                 <p>Best regards,<br>The " . APP_NAME . " Team</p>
             </div>
