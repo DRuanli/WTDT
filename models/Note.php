@@ -44,9 +44,6 @@ class Note {
             // Get image count for each note
             $row['image_count'] = $this->getNoteImageCount($row['id']);
             
-            // Get attachments for each note
-            $row['attachments'] = $this->getNoteImages($row['id']);
-            
             // Add shared status to note data
             $row['is_shared'] = $this->isSharedWithOthers($row['id']);
             
@@ -55,8 +52,8 @@ class Note {
         
         return $notes;
     }
-
-    // Also update the getById method to include attachments
+    
+    // Get a note by ID
     public function getById($id) {
         $stmt = $this->db->prepare("SELECT * FROM notes WHERE id = ?");
         $stmt->bind_param("i", $id);
@@ -65,13 +62,8 @@ class Note {
         
         if ($result->num_rows === 1) {
             $note = $result->fetch_assoc();
-            
-            // Add image attachments
-            $note['images'] = $this->getNoteImages($id);
-            
             // Add shared status
             $note['is_shared'] = $this->isSharedWithOthers($id);
-            
             return $note;
         }
         
@@ -145,6 +137,7 @@ class Note {
         
         $current_status = $row['is_pinned'];
         $new_status = $current_status ? 0 : 1;
+        $pin_time = null;
         
         if ($new_status) {
             // If pinning, set current time as pin_time
@@ -161,8 +154,7 @@ class Note {
             return [
                 'success' => true,
                 'is_pinned' => (bool) $new_status,
-                'message' => $new_status ? 'Note pinned successfully' : 'Note unpinned successfully',
-                'pin_time' => $new_status ? $pin_time : null
+                'message' => $new_status ? 'Note pinned successfully' : 'Note unpinned successfully'
             ];
         }
         

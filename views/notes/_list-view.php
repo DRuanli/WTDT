@@ -1,10 +1,3 @@
-<?php
-// This is the list view template for displaying notes
-
-// Make sure we have the notes array available
-$notes = $data['notes'] ?? [];
-?>
-
 <div class="notes-list">
     <div class="table-responsive">
         <table class="table">
@@ -13,14 +6,13 @@ $notes = $data['notes'] ?? [];
                     <th width="60"></th>
                     <th>Title</th>
                     <th>Content</th>
-                    <th>Attachments</th>
                     <th>Labels</th>
                     <th width="180">Last Modified</th>
                     <th width="120">Actions</th>
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($notes as $note): ?>
+                <?php foreach ($data['notes'] as $note): ?>
                     <tr class="<?= isset($note['is_pinned']) && $note['is_pinned'] ? 'pinned' : '' ?>">
                         <td class="note-status">
                             <div class="note-indicators">
@@ -34,6 +26,12 @@ $notes = $data['notes'] ?? [];
                                 
                                 <?php if (isset($note['is_shared']) && $note['is_shared']): ?>
                                     <span class="indicator shared" title="Shared with others"><i class="fas fa-share-alt"></i></span>
+                                <?php endif; ?>
+                                
+                                <?php if (isset($note['image_count']) && $note['image_count'] > 0): ?>
+                                    <span class="indicator" title="<?= $note['image_count'] ?> image(s) attached">
+                                        <i class="fas fa-image"></i>
+                                    </span>
                                 <?php endif; ?>
                             </div>
                         </td>
@@ -52,48 +50,10 @@ $notes = $data['notes'] ?? [];
                             <?php 
                             $content = isset($note['content']) ? $note['content'] : '';
                             $preview = strip_tags($content);
-                            $preview = substr($preview, 0, 100);
-                            if (strlen($content) > 100) $preview .= '...';
+                            $preview = substr($preview, 0, 150);
+                            if (strlen($content) > 150) $preview .= '...';
                             echo htmlspecialchars($preview);
                             ?>
-                        </td>
-                        <td class="note-attachments">
-                            <?php if (isset($note['images']) && !empty($note['images'])): ?>
-                                <div class="d-flex flex-wrap gap-1">
-                                    <?php 
-                                    $displayLimit = 2;
-                                    $count = 0;
-                                    foreach ($note['images'] as $attachment): 
-                                        if ($count >= $displayLimit) break;
-                                        
-                                        $ext = pathinfo($attachment['file_path'], PATHINFO_EXTENSION);
-                                        $isImage = in_array(strtolower($ext), ['jpg', 'jpeg', 'png', 'gif']);
-                                        $count++;
-                                    ?>
-                                        <?php if ($isImage): ?>
-                                            <div class="attachment-thumbnail-small">
-                                                <img src="<?= UPLOADS_URL . '/' . $attachment['file_path'] ?>" 
-                                                     alt="<?= htmlspecialchars($attachment['file_name']) ?>"
-                                                     class="img-thumbnail" style="width: 40px; height: 40px; object-fit: cover;">
-                                            </div>
-                                        <?php else: ?>
-                                            <div class="file-icon-xs d-flex align-items-center justify-content-center rounded" 
-                                                 style="width: 40px; height: 40px; background-color: #f8f9fa;">
-                                                <span class="small">.<?= strtoupper($ext) ?></span>
-                                            </div>
-                                        <?php endif; ?>
-                                    <?php endforeach; ?>
-                                    
-                                    <?php if (count($note['images']) > $displayLimit): ?>
-                                        <div class="more-attachments-small rounded d-flex align-items-center justify-content-center bg-light" 
-                                             style="width: 40px; height: 40px;">
-                                            <span class="small text-secondary">+<?= count($note['images']) - $displayLimit ?></span>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
-                            <?php else: ?>
-                                <span class="text-muted">None</span>
-                            <?php endif; ?>
                         </td>
                         <td class="note-labels">
                             <?php if (isset($note['labels']) && !empty($note['labels'])): ?>

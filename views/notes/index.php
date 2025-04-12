@@ -144,7 +144,7 @@
                                             <li>
                                                 <button class="dropdown-item pin-note" data-id="<?= $note['id'] ?>">
                                                     <i class="fas fa-thumbtack me-2 <?= isset($note['is_pinned']) && $note['is_pinned'] ? 'text-primary' : '' ?>"></i>
-                                                    <?= isset($note['is_pinned']) && $note['is_pinned'] ? 'Unpin' : 'Pin to Top' ?>
+                                                    <?= isset($note['is_pinned']) && $note['is_pinned'] ? 'Unpin' : 'Pin' ?>
                                                 </button>
                                             </li>
                                             <li>
@@ -268,7 +268,7 @@
                                     <tr class="<?= isset($note['is_pinned']) && $note['is_pinned'] ? 'table-primary' : '' ?>">
                                     <td class="text-center">
                                         <?php if (isset($note['is_pinned']) && $note['is_pinned']): ?>
-                                            <i class="fas fa-thumbtack text-primary" title="Pinned"></i>
+                                            <i class="fas fa-thumbtack text-primary me-1" title="Pinned"></i>
                                         <?php endif; ?>
                                         
                                         <?php if (isset($note['is_password_protected']) && $note['is_password_protected']): ?>
@@ -431,17 +431,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // Always reload the page to ensure proper sorting after pinning/unpinning
+                        // Refresh the page to reflect changes
                         window.location.reload();
-                    } else {
-                        // Show error message
-                        alert(data.message || 'Error updating pin status');
                     }
                 })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred while updating the pin status. Please try again.');
-                });
+                .catch(error => console.error('Error:', error));
             });
         });
     }
