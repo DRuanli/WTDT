@@ -393,4 +393,32 @@ class User {
             'message' => 'Failed to update preferences: ' . $stmt->error
         ];
     }
+
+    public function regenerateActivationToken($email) {
+        $user = $this->getUserByEmail($email);
+        
+        if (!$user) {
+            return ['success' => false, 'message' => 'Email not found'];
+        }
+        
+        if ($user['is_activated']) {
+            return ['success' => false, 'message' => 'Account already activated'];
+        }
+        
+        // Generate new activation token
+        $activation_token = bin2hex(random_bytes(32));
+        
+        $stmt = $this->db->prepare("UPDATE users SET activation_token = ? WHERE id = ?");
+        $stmt->bind_param("si", $activation_token, $user['id']);
+        
+        if ($stmt->execute()) {
+            return [
+                'success' => true,
+                'activation_token' => $activation_token,
+                'display_name' => $user['display_name']
+            ];
+        }
+        
+        return ['success' => false, 'message' => 'Failed to regenerate activation token'];
+    }
 }

@@ -198,6 +198,10 @@ switch ($font_size) {
     ?>
     <div class="alert alert-warning text-center mb-0 rounded-0">
         Your account is not verified. Please check your email to complete the activation process.
+        <form action="<?= BASE_URL ?>/resend-activation" method="POST" class="d-inline">
+            <input type="hidden" name="resend" value="1">
+            <button type="submit" class="btn btn-link alert-link p-0 d-inline">Resend activation email</button>
+        </form>
     </div>
     <?php 
         endif;

@@ -343,4 +343,67 @@ class AuthController {
         // Load view
         include VIEWS_PATH . '/auth/verify-otp.php';
     }
+
+    public function resendActivation() {
+        // Check if it's a direct resend request from a logged-in user
+        if (Session::isLoggedIn() && isset($_POST['resend'])) {
+            $user_id = Session::getUserId();
+            $user = $this->user->getUserById($user_id);
+            
+            if ($user && !$user['is_activated']) {
+                $result = $this->user->regenerateActivationToken($user['email']);
+                
+                if ($result['success']) {
+                    // Send activation email
+                    sendActivationEmail($user['email'], $user['display_name'], $result['activation_token']);
+                    
+                    // Set flash message
+                    Session::setFlash('success', 'Activation email has been resent. Please check your inbox.');
+                } else {
+                    Session::setFlash('error', $result['message']);
+                }
+            } else {
+                Session::setFlash('error', 'Your account is already activated or not found.');
+            }
+            
+            // Redirect back to previous page
+            header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? BASE_URL));
+            exit;
+        }
+        
+        // For non-logged in users
+        $data = [
+            'title' => 'Resend Activation Email',
+            'email' => '',
+            'errors' => []
+        ];
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $email = trim($_POST['email'] ?? '');
+            
+            if (empty($email)) {
+                $data['errors']['email'] = 'Email is required';
+            } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $data['errors']['email'] = 'Invalid email format';
+            }
+            
+            if (empty($data['errors'])) {
+                $result = $this->user->regenerateActivationToken($email);
+                
+                if ($result['success']) {
+                    sendActivationEmail($email, $result['display_name'], $result['activation_token']);
+                    Session::setFlash('success', 'Activation email has been resent. Please check your inbox.');
+                    header('Location: ' . BASE_URL . '/login');
+                    exit;
+                } else {
+                    $data['errors']['general'] = $result['message'];
+                }
+            }
+            
+            $data['email'] = $email;
+        }
+        
+        // Load view
+        include VIEWS_PATH . '/auth/resend-activation.php';
+    }
 }

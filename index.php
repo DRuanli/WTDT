@@ -96,6 +96,12 @@ switch ($page) {
         $controller->savePreferences();
         break;  
 
+    case 'resend-activation':
+        include_once 'controllers/AuthController.php';
+        $controller = new AuthController();
+        $controller->resendActivation();
+        break;
+
     case 'reset-password':
         include_once 'controllers/AuthController.php';
         $controller = new AuthController();
