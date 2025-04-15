@@ -8,9 +8,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <h4 class="mb-0"><?= isset($data['note']['id']) ? 'Edit Note' : 'Create Note' ?></h4>
                     <div>
-                        <button type="button" id="save-note-btn" class="btn btn-primary me-2">
-                            <i class="fas fa-save me-1"></i> Save
-                        </button>
+                        
                         <a href="<?= BASE_URL ?>/notes" class="btn btn-outline-secondary">
                             <i class="fas fa-times me-1"></i> Cancel
                         </a>
