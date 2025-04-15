@@ -323,6 +323,7 @@ class User {
             'message' => 'Failed to update avatar: ' . $stmt->error
         ];
     }
+    
 
     /**
      * Remove user avatar
@@ -342,6 +343,7 @@ class User {
             'message' => 'Failed to remove avatar: ' . $stmt->error
         ];
     }
+
     /**
      * Get user preferences
      */
