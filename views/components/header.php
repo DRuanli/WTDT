@@ -61,7 +61,7 @@ switch ($font_size) {
     
     <!-- PWA support -->
     <?php if (defined('ENABLE_OFFLINE_MODE') && ENABLE_OFFLINE_MODE): ?>
-        <link rel="manifest" href="<?= BASE_URL ?>/manifest.json">
+        
         <meta name="theme-color" content="#4a89dc">
     <?php endif; ?>
     

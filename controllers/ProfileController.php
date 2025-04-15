@@ -148,6 +148,9 @@ class ProfileController {
                 $result = $this->user->updateProfile($user_id, $display_name);
                 
                 if ($result['success']) {
+                    // Update session display name
+                    Session::set('user_display_name', $display_name);
+                    
                     Session::setFlash('success', 'Profile updated successfully');
                     header('Location: ' . BASE_URL . '/profile');
                     exit;
@@ -277,6 +280,47 @@ class ProfileController {
             if (!file_exists($avatars_dir)) {
                 mkdir($avatars_dir, 0755, true);
             }
+
+            // Create parent directory first if it doesn't exist
+            if (!file_exists(ROOT_PATH . '/uploads')) {
+                if (!mkdir(ROOT_PATH . '/uploads', 0755, true)) {
+                    Session::setFlash('error', 'Failed to create uploads directory');
+                    header('Location: ' . BASE_URL . '/profile/edit');
+                    exit;
+                }
+            }
+            
+            // Then create avatars directory
+            if (!file_exists($avatars_dir)) {
+                if (!mkdir($avatars_dir, 0755, true)) {
+                    Session::setFlash('error', 'Failed to create avatars directory');
+                    header('Location: ' . BASE_URL . '/profile/edit');
+                    exit;
+                }
+            }
+            
+            // Ensure directory is writable
+            // In uploadAvatar() method
+            if (!is_writable($avatars_dir)) {
+                // Try to force permissions
+                chmod($avatars_dir, 0777); // More permissive for testing
+                
+                if (!is_writable($avatars_dir)) {
+                    // Try to create a temporary directory instead
+                    $temp_dir = sys_get_temp_dir() . '/note_avatars';
+                    if (!file_exists($temp_dir)) {
+                        mkdir($temp_dir, 0777, true);
+                    }
+                    $avatars_dir = $temp_dir;
+                    
+                    // Still not writable?
+                    if (!is_writable($avatars_dir)) {
+                        Session::setFlash('error', 'Cannot find a writable directory for uploads');
+                        header('Location: ' . BASE_URL . '/profile/edit');
+                        exit;
+                    }
+                }
+            }
             
             // Handle avatar upload
             if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
@@ -344,6 +388,10 @@ class ProfileController {
                 } else {
                     Session::setFlash('error', $result['message']);
                 }
+            } else if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] !== UPLOAD_ERR_OK && $_FILES['avatar']['error'] !== UPLOAD_ERR_NO_FILE) {
+                // Handle upload errors
+                $error_message = $this->getFileUploadErrorMessage($_FILES['avatar']['error']);
+                Session::setFlash('error', 'Avatar upload failed: ' . $error_message);
             }
             
             header('Location: ' . BASE_URL . '/profile/edit');
@@ -351,4 +399,25 @@ class ProfileController {
         }
     }
     
+    // Helper function to get file upload error messages
+    private function getFileUploadErrorMessage($error_code) {
+        switch ($error_code) {
+            case UPLOAD_ERR_INI_SIZE:
+                return "The uploaded file exceeds the upload_max_filesize directive in php.ini";
+            case UPLOAD_ERR_FORM_SIZE:
+                return "The uploaded file exceeds the MAX_FILE_SIZE directive in the HTML form";
+            case UPLOAD_ERR_PARTIAL:
+                return "The uploaded file was only partially uploaded";
+            case UPLOAD_ERR_NO_FILE:
+                return "No file was uploaded";
+            case UPLOAD_ERR_NO_TMP_DIR:
+                return "Missing a temporary folder";
+            case UPLOAD_ERR_CANT_WRITE:
+                return "Failed to write file to disk";
+            case UPLOAD_ERR_EXTENSION:
+                return "A PHP extension stopped the file upload";
+            default:
+                return "Unknown upload error";
+        }
+    }
 }

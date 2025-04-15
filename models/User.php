@@ -323,7 +323,6 @@ class User {
             'message' => 'Failed to update avatar: ' . $stmt->error
         ];
     }
-    
 
     /**
      * Remove user avatar

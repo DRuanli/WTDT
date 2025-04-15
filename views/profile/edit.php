@@ -1,3 +1,6 @@
+<?php
+// views/profile/edit.php - Updated with improved avatar functionality
+?>
 <div class="row">
     <div class="col-md-8 mx-auto">
         <div class="card shadow-sm">
@@ -46,7 +49,7 @@
                                 <?php endif; ?>
                             </div>
                             
-                            <form method="POST" action="<?= BASE_URL ?>/profile/upload-avatar" enctype="multipart/form-data">
+                            <form method="POST" action="<?= BASE_URL ?>/profile/upload-avatar" enctype="multipart/form-data" id="avatar-form">
                                 <div class="mb-3">
                                     <label for="avatar" class="form-label visually-hidden">Choose Image</label>
                                     <input class="form-control form-control-sm" id="avatar" name="avatar" type="file" accept="image/jpeg,image/png">
@@ -54,12 +57,12 @@
                                 </div>
                                 
                                 <div class="d-grid gap-2">
-                                    <button type="submit" class="btn btn-primary btn-sm">
+                                    <button type="submit" class="btn btn-primary btn-sm" id="upload-avatar-btn">
                                         <i class="fas fa-upload me-1"></i> Upload Photo
                                     </button>
                                     
                                     <?php if (isset($data['user']['avatar_path']) && !empty($data['user']['avatar_path'])): ?>
-                                        <button type="submit" class="btn btn-outline-danger btn-sm" name="remove_avatar" value="1">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm" name="remove_avatar" value="1" id="remove-avatar-btn">
                                             <i class="fas fa-trash me-1"></i> Remove Photo
                                         </button>
                                     <?php endif; ?>
@@ -72,7 +75,7 @@
                     <div class="col-md-8">
                         <h5 class="mb-3">Account Information</h5>
                         
-                        <form method="POST" action="<?= BASE_URL ?>/profile/edit">
+                        <form method="POST" action="<?= BASE_URL ?>/profile/edit" id="profile-form">
                             <div class="mb-3">
                                 <label for="display_name" class="form-label">Display Name</label>
                                 <input type="text" class="form-control <?= !empty($data['errors']['display_name']) ? 'is-invalid' : '' ?>" 
@@ -104,7 +107,7 @@
                                 <a href="<?= BASE_URL ?>/profile/change-password" class="btn btn-outline-secondary">
                                     <i class="fas fa-key me-1"></i> Change Password
                                 </a>
-                                <button type="submit" class="btn btn-primary">
+                                <button type="submit" class="btn btn-primary" id="save-profile-btn">
                                     <i class="fas fa-save me-1"></i> Save Changes
                                 </button>
                             </div>
@@ -118,12 +121,34 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Avatar preview functionality
     const avatarInput = document.getElementById('avatar');
     const avatarContainer = document.querySelector('.avatar-container');
+    const avatarForm = document.getElementById('avatar-form');
+    const uploadAvatarBtn = document.getElementById('upload-avatar-btn');
+    const profileForm = document.getElementById('profile-form');
+    const saveProfileBtn = document.getElementById('save-profile-btn');
     
+    // Handle avatar file selection
     if (avatarInput && avatarContainer) {
         avatarInput.addEventListener('change', function() {
             if (this.files && this.files[0]) {
+                const file = this.files[0];
+                
+                // Validate file size
+                if (file.size > 2 * 1024 * 1024) {
+                    alert('File is too large. Maximum size is 2MB.');
+                    this.value = ''; // Clear the input
+                    return;
+                }
+                
+                // Validate file type
+                if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
+                    alert('Invalid file type. Only JPG and PNG are allowed.');
+                    this.value = ''; // Clear the input
+                    return;
+                }
+                
                 const reader = new FileReader();
                 
                 reader.onload = function(e) {
@@ -151,8 +176,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     avatarPreview.alt = 'Avatar Preview';
                 };
                 
-                reader.readAsDataURL(this.files[0]);
+                reader.readAsDataURL(file);
             }
+        });
+    }
+    
+    // Add loading state to buttons when clicked
+    if (uploadAvatarBtn) {
+        avatarForm.addEventListener('submit', function() {
+            if (avatarInput.files.length > 0 || document.querySelector('button[name="remove_avatar"]')) {
+                uploadAvatarBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Uploading...';
+                uploadAvatarBtn.disabled = true;
+            }
+        });
+    }
+    
+    if (saveProfileBtn) {
+        profileForm.addEventListener('submit', function() {
+            saveProfileBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Saving...';
+            saveProfileBtn.disabled = true;
         });
     }
 });
