@@ -31,6 +31,20 @@ switch ($action) {
         $note_data = $note->getById($note_id);
         
         if ($note_data && ($note_data['user_id'] == $user_id || $sharedNote->isSharedWithUser($note_id, $user_id))) {
+            // Check if note is password protected
+            if (isset($note_data['is_password_protected']) && $note_data['is_password_protected']) {
+                // Check if user has verified the password in this session
+                $verified_notes = Session::get('verified_notes', []);
+                if (!in_array($note_id, $verified_notes)) {
+                    echo json_encode([
+                        'error' => 'Password verification required',
+                        'requires_password' => true,
+                        'note_id' => $note_id
+                    ]);
+                    exit;
+                }
+            }
+            
             // Add labels
             $note_data['labels'] = $note->getNoteLabels($note_id);
             echo json_encode(['success' => true, 'note' => $note_data]);
@@ -92,6 +106,20 @@ switch ($action) {
             exit;
         }
         
+        // Check if note is password protected
+        if (isset($note_data['is_password_protected']) && $note_data['is_password_protected']) {
+            // Check if user has verified the password in this session
+            $verified_notes = Session::get('verified_notes', []);
+            if (!in_array($note_id, $verified_notes)) {
+                echo json_encode([
+                    'error' => 'Password verification required',
+                    'requires_password' => true,
+                    'note_id' => $note_id
+                ]);
+                exit;
+            }
+        }
+        
         if (empty($title)) {
             echo json_encode(['error' => 'Title is required']);
             exit;
@@ -126,6 +154,20 @@ switch ($action) {
             exit;
         }
         
+        // Check if note is password protected
+        if (isset($note_data['is_password_protected']) && $note_data['is_password_protected']) {
+            // Check if user has verified the password in this session
+            $verified_notes = Session::get('verified_notes', []);
+            if (!in_array($note_id, $verified_notes)) {
+                echo json_encode([
+                    'error' => 'Password verification required',
+                    'requires_password' => true,
+                    'note_id' => $note_id
+                ]);
+                exit;
+            }
+        }
+        
         $result = $note->delete($note_id);
         
         if ($result['success']) {
@@ -147,6 +189,21 @@ switch ($action) {
             exit;
         }
         
+        // Check if note is password protected
+        if (isset($note_data['is_password_protected']) && $note_data['is_password_protected']) {
+            // Check if user has verified the password in this session
+            $verified_notes = Session::get('verified_notes', []);
+            if (!in_array($note_id, $verified_notes)) {
+                echo json_encode([
+                    'error' => 'Password verification required',
+                    'requires_password' => true,
+                    'note_id' => $note_id
+                ]);
+                exit;
+            }
+        }
+        
+        // Toggle pin status
         $result = $note->togglePin($note_id);
         
         if ($result['success']) {
@@ -157,6 +214,43 @@ switch ($action) {
             ]);
         } else {
             echo json_encode(['error' => $result['message']]);
+        }
+        break;
+        
+    case 'verify-password':
+        // Verify password for a protected note
+        $note_id = isset($_POST['id']) ? intval($_POST['id']) : 0;
+        $password = isset($_POST['password']) ? $_POST['password'] : '';
+        
+        // Check if note exists and user has access
+        $note_data = $note->getById($note_id);
+        
+        if (!$note_data || ($note_data['user_id'] != $user_id && !$sharedNote->isSharedWithUser($note_id, $user_id))) {
+            echo json_encode(['error' => 'Note not found or access denied']);
+            exit;
+        }
+        
+        // Check if note is actually password protected
+        if (!isset($note_data['is_password_protected']) || !$note_data['is_password_protected']) {
+            echo json_encode(['success' => true, 'message' => 'Note is not password protected']);
+            exit;
+        }
+        
+        // Verify password
+        if (empty($password)) {
+            echo json_encode(['error' => 'Password is required']);
+            exit;
+        }
+        
+        if ($note->verifyNotePassword($note_id, $password)) {
+            // Password verified - store in session
+            $verified_notes = Session::get('verified_notes', []);
+            $verified_notes[] = $note_id;
+            Session::set('verified_notes', $verified_notes);
+            
+            echo json_encode(['success' => true, 'message' => 'Password verified successfully']);
+        } else {
+            echo json_encode(['error' => 'Incorrect password']);
         }
         break;
         

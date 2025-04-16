@@ -417,6 +417,29 @@ class NoteController {
             }
         }
         
+        // Check if note is password protected
+        if (isset($note['is_password_protected']) && $note['is_password_protected']) {
+            // Handle password protection - check if already verified this session
+            $verified_notes = Session::get('verified_notes', []);
+            
+            if (!in_array($id, $verified_notes)) {
+                if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+                    // AJAX request
+                    header('Content-Type: application/json');
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'Password verification required',
+                        'redirect' => BASE_URL . '/notes/verify-password/' . $id . '?redirect=toggle-pin'
+                    ]);
+                    exit;
+                } else {
+                    // Redirect to password verification page
+                    header('Location: ' . BASE_URL . '/notes/verify-password/' . $id . '?redirect=toggle-pin');
+                    exit;
+                }
+            }
+        }
+        
         // Toggle pin status
         $result = $this->note->togglePin($id);
         
@@ -577,8 +600,23 @@ class NoteController {
                 
                 // Redirect to the intended page
                 $redirect = $_POST['redirect'] ?? 'view';
-                header('Location: ' . BASE_URL . '/notes/' . $redirect . '/' . $id);
-                exit;
+                
+                // Handle special case for toggle-pin
+                if ($redirect === 'toggle-pin') {
+                    // Perform toggle pin operation directly
+                    $result = $this->note->togglePin($id);
+                    if ($result['success']) {
+                        $action = isset($result['is_pinned']) && $result['is_pinned'] ? 'pinned' : 'unpinned';
+                        Session::setFlash('success', 'Note ' . $action . ' successfully');
+                    } else {
+                        Session::setFlash('error', 'Failed to update note: ' . $result['message']);
+                    }
+                    header('Location: ' . BASE_URL . '/notes');
+                    exit;
+                } else {
+                    header('Location: ' . BASE_URL . '/notes/' . $redirect . '/' . $id);
+                    exit;
+                }
             }
         }
         
