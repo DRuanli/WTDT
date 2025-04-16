@@ -89,42 +89,66 @@ if (Session::isLoggedIn()) {
         }
         
         /* Note color preferences */
-        .note-color-white .note-card {
+        .note-color-white .note-card,
+        .note-color-white .card.h-100,
+        .note-color-white .card-body {
             background-color: #ffffff !important;
         }
-        .note-color-blue .note-card {
+        .note-color-blue .note-card,
+        .note-color-blue .card.h-100,
+        .note-color-blue .card-body {
             background-color: #f0f5ff !important;
         }
-        .note-color-green .note-card {
+        .note-color-green .note-card,
+        .note-color-green .card.h-100,
+        .note-color-green .card-body {
             background-color: #f0fff5 !important;
         }
-        .note-color-yellow .note-card {
+        .note-color-yellow .note-card,
+        .note-color-yellow .card.h-100,
+        .note-color-yellow .card-body {
             background-color: #fffbeb !important;
         }
-        .note-color-purple .note-card {
+        .note-color-purple .note-card,
+        .note-color-purple .card.h-100,
+        .note-color-purple .card-body {
             background-color: #f8f0ff !important;
         }
-        .note-color-pink .note-card {
+        .note-color-pink .note-card,
+        .note-color-pink .card.h-100,
+        .note-color-pink .card-body {
             background-color: #fff0f7 !important;
         }
-        
+
         /* Dark mode adjustments for note colors */
-        [data-bs-theme="dark"] .note-color-white .note-card {
+        [data-bs-theme="dark"] .note-color-white .note-card,
+        [data-bs-theme="dark"] .note-color-white .card.h-100,
+        [data-bs-theme="dark"] .note-color-white .card-body {
             background-color: #2b2b2b !important;
         }
-        [data-bs-theme="dark"] .note-color-blue .note-card {
+        [data-bs-theme="dark"] .note-color-blue .note-card,
+        [data-bs-theme="dark"] .note-color-blue .card.h-100,
+        [data-bs-theme="dark"] .note-color-blue .card-body {
             background-color: #1a2035 !important;
         }
-        [data-bs-theme="dark"] .note-color-green .note-card {
+        [data-bs-theme="dark"] .note-color-green .note-card,
+        [data-bs-theme="dark"] .note-color-green .card.h-100,
+        [data-bs-theme="dark"] .note-color-green .card-body {
             background-color: #1a2e22 !important;
         }
-        [data-bs-theme="dark"] .note-color-yellow .note-card {
+        [data-bs-theme="dark"] .note-color-yellow .note-card,
+        [data-bs-theme="dark"] .note-color-yellow .card.h-100,
+        [data-bs-theme="dark"] .note-color-yellow .card-body {
             background-color: #2e2a1a !important;
         }
-        [data-bs-theme="dark"] .note-color-purple .note-card {
+        [data-bs-theme="dark"] .note-color-purple .note-card,
+        [data-bs-theme="dark"] .note-color-purple .card.h-100,
+        [data-bs-theme="dark"] .note-color-purple .card-body {
             background-color: #25192e !important;
         }
-        [data-bs-theme="dark"] .note-color-pink .note-card {
+        [data-bs-theme="dark"] .note-color-pink .note-card,
+        [data-bs-theme="dark"] .note-color-pink .card.h-100,
+        [data-bs-theme="dark"] .note-color-pink .card-body {
             background-color: #2e1923 !important;
         }
     </style>
