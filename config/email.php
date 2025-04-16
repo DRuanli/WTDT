@@ -7,5 +7,5 @@ define('MAIL_PORT', 587);
 define('MAIL_USERNAME', 'ledangnguyena1.nvh1922@gmail.com'); // Replace with your actual email
 define('MAIL_PASSWORD', 'lylq yeie isxh fvdd');  // Replace with your actual password
 define('MAIL_ENCRYPTION', 'tls');
-define('MAIL_FROM_ADDRESS', 'your-email@gmail.com');
+define('MAIL_FROM_ADDRESS', 'ledangnguyena1.nvh1922@gmail.com'); // Changed to match MAIL_USERNAME
 define('MAIL_FROM_NAME', 'Note Management App');

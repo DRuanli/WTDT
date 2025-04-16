@@ -354,11 +354,14 @@ class AuthController {
                 $result = $this->user->regenerateActivationToken($user['email']);
                 
                 if ($result['success']) {
-                    // Send activation email
-                    sendActivationEmail($user['email'], $user['display_name'], $result['activation_token']);
+                    // Send activation email and check if successful
+                    $emailSent = sendActivationEmail($user['email'], $user['display_name'], $result['activation_token']);
                     
-                    // Set flash message
-                    Session::setFlash('success', 'Activation email has been resent. Please check your inbox.');
+                    if ($emailSent) {
+                        Session::setFlash('success', 'Activation email has been resent. Please check your inbox.');
+                    } else {
+                        Session::setFlash('error', 'Failed to send activation email. Please contact support.');
+                    }
                 } else {
                     Session::setFlash('error', $result['message']);
                 }
@@ -391,8 +394,14 @@ class AuthController {
                 $result = $this->user->regenerateActivationToken($email);
                 
                 if ($result['success']) {
-                    sendActivationEmail($email, $result['display_name'], $result['activation_token']);
-                    Session::setFlash('success', 'Activation email has been resent. Please check your inbox.');
+                    $emailSent = sendActivationEmail($email, $result['display_name'], $result['activation_token']);
+                    
+                    if ($emailSent) {
+                        Session::setFlash('success', 'Activation email has been resent. Please check your inbox.');
+                    } else {
+                        Session::setFlash('error', 'Failed to send activation email. Please contact support.');
+                    }
+                    
                     header('Location: ' . BASE_URL . '/login');
                     exit;
                 } else {
