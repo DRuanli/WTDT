@@ -1,19 +1,65 @@
 <?php
-// Note Edit View - views/notes/edit.php
+// Check if note is shared with current user
+$user_id = Session::getUserId();
+$is_shared = isset($data['note']['user_id']) && $data['note']['user_id'] != $user_id;
+$can_edit = !$is_shared || (isset($data['note']['can_edit']) && $data['note']['can_edit']);
 ?>
 <div class="row">
     <div class="col-md-10 mx-auto">
         <div class="card shadow-sm">
             <div class="card-header bg-white">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0"><?= isset($data['note']['id']) ? 'Edit Note' : 'Create Note' ?></h4>
+                    <h4 class="mb-0">
+                        <?php if (isset($data['note']['id'])): ?>
+                            <?php if ($is_shared): ?>
+                                <?php if ($can_edit): ?>
+                                    <i class="fas fa-edit text-primary me-2"></i>Edit Shared Note
+                                    <span class="badge bg-success ms-2">Can Edit</span>
+                                <?php else: ?>
+                                    <i class="fas fa-eye text-primary me-2"></i>View Shared Note
+                                    <span class="badge bg-secondary ms-2">Read Only</span>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <i class="fas fa-edit text-primary me-2"></i>Edit Note
+                            <?php endif; ?>
+                        <?php else: ?>
+                            <i class="fas fa-plus text-primary me-2"></i>Create Note
+                        <?php endif; ?>
+                    </h4>
                     <div>
-                        
+                        <?php if (isset($data['note']['id']) && !$is_shared): ?>
+                            <div class="btn-group me-2">
+                                <a href="<?= BASE_URL ?>/notes/share/<?= $data['note']['id'] ?>" class="btn btn-outline-info">
+                                    <i class="fas fa-share-alt me-1"></i> Share
+                                </a>
+                                <a href="<?= BASE_URL ?>/notes/toggle-password/<?= $data['note']['id'] ?>" class="btn btn-outline-warning">
+                                    <?php if (isset($data['note']['is_password_protected']) && $data['note']['is_password_protected']): ?>
+                                        <i class="fas fa-unlock me-1"></i> Remove Password
+                                    <?php else: ?>
+                                        <i class="fas fa-lock me-1"></i> Add Password
+                                    <?php endif; ?>
+                                </a>
+                            </div>
+                        <?php endif; ?>
                         <a href="<?= BASE_URL ?>/notes" class="btn btn-outline-secondary">
                             <i class="fas fa-times me-1"></i> Cancel
                         </a>
                     </div>
                 </div>
+                
+                <?php if ($is_shared): ?>
+                <div class="mt-2 small text-muted">
+                    <strong>Shared by:</strong> <?= htmlspecialchars($data['note']['owner_name'] ?? 'Unknown User') ?> &middot;
+                    <strong>Shared on:</strong> <?php 
+                        if (isset($data['note']['shared_at'])) {
+                            $shared_at = new DateTime($data['note']['shared_at']);
+                            echo $shared_at->format('M j, Y g:i A');
+                        } else {
+                            echo 'Unknown date';
+                        }
+                    ?>
+                </div>
+                <?php endif; ?>
             </div>
             
             <form id="note-form" method="POST" action="<?= isset($data['note']['id']) ? BASE_URL . '/notes/update/' . $data['note']['id'] : BASE_URL . '/notes/store' ?>" enctype="multipart/form-data">
@@ -30,12 +76,14 @@
                                class="form-control form-control-lg border-0 shadow-none" 
                                placeholder="Note title" 
                                value="<?= htmlspecialchars($data['note']['title'] ?? '') ?>" 
-                               required>
+                               required
+                               <?= (!$can_edit) ? 'readonly' : '' ?>>
                         <?php if (!empty($data['errors']['title'])): ?>
                             <div class="invalid-feedback d-block"><?= $data['errors']['title'] ?></div>
                         <?php endif; ?>
                     </div>
                     
+                    <?php if ($can_edit): ?>
                     <!-- Image Attachment Section -->
                     <div class="mb-4">
                         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -81,7 +129,9 @@
                             </div>
                         <?php endif; ?>
                     </div>
+                    <?php endif; ?>
                     
+                    <?php if ($can_edit): ?>
                     <!-- Labels Section -->
                     <div class="mb-4">
                         <label class="form-label mb-2"><i class="fas fa-tag text-primary me-1"></i> Labels</label>
@@ -106,6 +156,7 @@
                             </div>
                         <?php endif; ?>
                     </div>
+                    <?php endif; ?>
                     
                     <!-- Content Field -->
                     <div class="mb-3">
@@ -113,10 +164,30 @@
                         <textarea name="content" id="note-content" 
                                   class="form-control" 
                                   placeholder="Write your note here..." 
-                                  rows="12"><?= htmlspecialchars($data['note']['content'] ?? '') ?></textarea>
+                                  rows="12"
+                                  <?= (!$can_edit) ? 'readonly' : '' ?>><?= htmlspecialchars($data['note']['content'] ?? '') ?></textarea>
                     </div>
+
+                    <?php if ($is_shared && $can_edit): ?>
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Real-time Collaboration:</strong> Any changes you make will be visible to other users in real-time. You might also see others' cursors while they edit.
+                    </div>
+                    <?php endif; ?>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Collaboration participants view -->
+<div id="collaborators-panel" class="position-fixed top-0 end-0 p-3 d-none" style="z-index: 1050; margin-top: 80px;">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white py-2">
+            <h6 class="m-0"><i class="fas fa-users me-2"></i>Active Collaborators</h6>
+        </div>
+        <div class="card-body p-0">
+            <ul id="collaborators-list" class="list-group list-group-flush"></ul>
         </div>
     </div>
 </div>
@@ -128,6 +199,21 @@
             <span id="saving-icon" class="me-2"><i class="fas fa-circle-notch fa-spin"></i></span>
             <span id="saved-icon" class="me-2" style="display: none;"><i class="fas fa-check text-success"></i></span>
             <span id="save-message">Saving...</span>
+        </div>
+    </div>
+</div>
+
+<!-- Real-time collaboration notification toast -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050; margin-bottom: 60px;">
+    <div id="collaborationToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <i class="fas fa-users me-2 text-primary"></i>
+            <strong class="me-auto">Collaboration</strong>
+            <small>Just now</small>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="collaborationToastBody">
+            Someone is editing this note.
         </div>
     </div>
 </div>
@@ -186,6 +272,50 @@
 .form-control:focus {
     box-shadow: none;
 }
+
+/* Remote cursor styles */
+.remote-cursor {
+    position: absolute;
+    z-index: 100;
+    pointer-events: none;
+}
+
+.remote-cursor-label {
+    position: absolute;
+    top: -20px;
+    left: 0;
+    background-color: #3498db;
+    color: white;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.remote-cursor-caret {
+    width: 2px;
+    height: 20px;
+    background-color: #3498db;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+/* Collaborators list styles */
+#collaborators-list .user-avatar {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: white;
+    margin-right: 8px;
+}
 </style>
 
 <script>
@@ -193,7 +323,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const noteForm = document.getElementById('note-form');
     const titleInput = document.getElementById('note-title');
     const contentInput = document.getElementById('note-content');
-    const saveButton = document.getElementById('save-note-btn');
     const saveStatus = document.getElementById('save-status');
     const savingIcon = document.getElementById('saving-icon');
     const savedIcon = document.getElementById('saved-icon');
@@ -202,6 +331,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const previewContainer = document.getElementById('image-preview-container');
     const previewsDiv = document.getElementById('image-previews');
     const dropzone = document.getElementById('dropzone');
+    const collaboratorsPanel = document.getElementById('collaborators-panel');
+    const collaboratorsList = document.getElementById('collaborators-list');
     
     // Variables for auto-save
     let saveTimeout;
@@ -308,8 +439,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Add event listeners for auto-save
     if (titleInput && contentInput) {
-        titleInput.addEventListener('input', autoSave);
-        contentInput.addEventListener('input', autoSave);
+        const isReadOnly = contentInput.hasAttribute('readonly');
+        
+        if (!isReadOnly) {
+            titleInput.addEventListener('input', autoSave);
+            contentInput.addEventListener('input', autoSave);
+        }
     }
     
     // Add event listeners for label checkboxes
@@ -317,48 +452,6 @@ document.addEventListener('DOMContentLoaded', function() {
     labelCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', autoSave);
     });
-    
-    // Save button functionality
-    if (saveButton) {
-        saveButton.addEventListener('click', function() {
-            // Show saving indicator
-            showSaveStatus('saving');
-            
-            // Submit the form without waiting for auto-save
-            const formData = new FormData(noteForm);
-            
-            fetch(noteForm.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update last saved content
-                    lastSavedContent = contentInput.value;
-                    lastSavedTitle = titleInput.value;
-                    
-                    // Show saved indicator
-                    showSaveStatus('saved', 'Note saved successfully');
-                    
-                    // If this was a new note, redirect to edit page
-                    if (data.note_id && !window.location.href.includes('/edit/')) {
-                        window.location.href = BASE_URL + '/notes/edit/' + data.note_id;
-                    }
-                } else {
-                    // Show error indicator
-                    showSaveStatus('error', data.errors?.general || 'Error saving note');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showSaveStatus('error', 'Network error');
-            });
-        });
-    }
     
     // Image upload handling
     if (imageInput) {
@@ -538,5 +631,374 @@ document.addEventListener('DOMContentLoaded', function() {
             return message;
         }
     });
+
+    // Initialize WebSocket connection
+    let noteWebsocket;
+    let isCollaborationEnabled = <?= ($is_shared && $can_edit) ? 'true' : 'false' ?>;
+    let remoteCursors = {};
+    let lastCursorPositions = {};
+    let currentCollaborators = {};
+    let noteId = <?= isset($data['note']['id']) ? $data['note']['id'] : '0' ?>;
+    let userId = <?= Session::getUserId() ?>;
+
+    // Connect to WebSocket server for collaboration
+    if (isCollaborationEnabled || <?= (isset($data['note']['id']) && !$is_shared) ? 'true' : 'false' ?>) {
+        initWebsocket();
+    }
+
+    function initWebsocket() {
+        if (!ENABLE_WEBSOCKETS) return;
+        
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}:8080`;
+        
+        noteWebsocket = new WebSocket(wsUrl);
+        
+        noteWebsocket.onopen = function() {
+            console.log('WebSocket connection established');
+            
+            // Authenticate with the server
+            noteWebsocket.send(JSON.stringify({
+                type: 'auth',
+                user_id: userId,
+                token: 'simple-auth-token' // In a real application, use a secure token
+            }));
+            
+            // Subscribe to this note's updates
+            setTimeout(() => {
+                if (noteId > 0) {
+                    noteWebsocket.send(JSON.stringify({
+                        type: 'subscribe',
+                        note_id: noteId
+                    }));
+                }
+            }, 500); // Short delay to ensure authentication completes
+        };
+        
+        noteWebsocket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            
+            switch (data.type) {
+                case 'auth_response':
+                    if (data.success) {
+                        console.log('Authenticated with WebSocket server');
+                    } else {
+                        console.error('Authentication failed:', data.message);
+                    }
+                    break;
+                    
+                case 'note_updated':
+                    if (data.user_id !== userId) {
+                        handleRemoteUpdate(data);
+                    }
+                    break;
+                    
+                case 'cursor_position':
+                    if (data.user_id !== userId) {
+                        updateRemoteCursor(data);
+                    }
+                    break;
+                    
+                case 'user_joined':
+                    if (data.user_id !== userId) {
+                        showCollaborationToast(`${data.user_name} joined the note`);
+                        currentCollaborators[data.user_id] = data.user_name;
+                        updateCollaboratorsList();
+                    }
+                    break;
+                    
+                case 'user_left':
+                    if (data.user_id !== userId) {
+                        showCollaborationToast(`${data.user_name} left the note`);
+                        delete currentCollaborators[data.user_id];
+                        removeRemoteCursor(data.user_id);
+                        updateCollaboratorsList();
+                    }
+                    break;
+            }
+        };
+        
+        noteWebsocket.onclose = function() {
+            console.log('WebSocket connection closed');
+            
+            // Attempt to reconnect after 5 seconds
+            setTimeout(initWebsocket, 5000);
+        };
+        
+        noteWebsocket.onerror = function(error) {
+            console.error('WebSocket error:', error);
+        };
+        
+        // Send updates when the content changes
+        let lastUpdateTime = 0;
+        
+        function debounce(func, wait) {
+            let timeout;
+            return function() {
+                const context = this;
+                const args = arguments;
+                const later = function() {
+                    timeout = null;
+                    func.apply(context, args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+        
+        const sendUpdate = debounce(function() {
+            if (noteWebsocket.readyState === WebSocket.OPEN && noteId > 0) {
+                const title = document.getElementById('note-title').value;
+                const content = document.getElementById('note-content').value;
+                
+                noteWebsocket.send(JSON.stringify({
+                    type: 'note_update',
+                    note_id: noteId,
+                    title: title,
+                    content: content
+                }));
+                
+                lastUpdateTime = Date.now();
+            }
+        }, 500);
+        
+        // Listen for changes in the editor if editing is allowed
+        if (titleInput && !titleInput.readOnly) {
+            titleInput.addEventListener('input', sendUpdate);
+        }
+        
+        if (contentInput && !contentInput.readOnly) {
+            contentInput.addEventListener('input', sendUpdate);
+            
+            // Send cursor position updates
+            contentInput.addEventListener('click', sendCursorPosition);
+            contentInput.addEventListener('keyup', sendCursorPosition);
+            contentInput.addEventListener('select', sendCursorPosition);
+        }
+        
+        // Clean up when leaving the page
+        window.addEventListener('beforeunload', function() {
+            if (noteWebsocket.readyState === WebSocket.OPEN && noteId > 0) {
+                noteWebsocket.send(JSON.stringify({
+                    type: 'unsubscribe',
+                    note_id: noteId
+                }));
+            }
+        });
+    }
+
+    // Handle remote updates to the note
+    function handleRemoteUpdate(data) {
+        if (!isCollaborationEnabled) return;
+        
+        // Don't apply updates if the user is actively typing
+        const isUserActive = document.activeElement === titleInput || 
+                            document.activeElement === contentInput;
+        
+        // Update the title if provided and not currently being edited
+        if (data.title && document.activeElement !== titleInput) {
+            titleInput.value = data.title;
+        }
+        
+        // Update the content if not currently being edited
+        if (data.content && document.activeElement !== contentInput) {
+            // Save current scroll position
+            const scrollTop = contentInput.scrollTop;
+            
+            // Update content
+            contentInput.value = data.content;
+            
+            // Restore scroll position
+            contentInput.scrollTop = scrollTop;
+            
+            // Show toast notification
+            showCollaborationToast(`${data.user_name} updated the note`);
+        }
+    }
+
+    // Send cursor position to server
+    function sendCursorPosition() {
+        if (!isCollaborationEnabled || !noteWebsocket) return;
+        
+        const position = contentInput.selectionStart;
+        
+        // Only send if position changed
+        if (lastCursorPositions[userId] !== position) {
+            lastCursorPositions[userId] = position;
+            
+            if (noteWebsocket.readyState === WebSocket.OPEN && noteId > 0) {
+                noteWebsocket.send(JSON.stringify({
+                    type: 'cursor_position',
+                    note_id: noteId,
+                    position: position
+                }));
+            }
+        }
+    }
+
+    // Update remote cursor position
+    function updateRemoteCursor(data) {
+        if (!isCollaborationEnabled) return;
+        
+        const userId = data.user_id;
+        const position = data.position;
+        const userName = data.user_name;
+        
+        // Generate a consistent color for this user
+        const userColor = getColorForUser(userId);
+        
+        // Create or update cursor element
+        let cursor = remoteCursors[userId];
+        if (!cursor) {
+            cursor = document.createElement('div');
+            cursor.className = 'remote-cursor';
+            cursor.innerHTML = `
+                <div class="remote-cursor-label" style="background-color: ${userColor}">${userName}</div>
+                <div class="remote-cursor-caret" style="background-color: ${userColor}"></div>
+            `;
+            document.body.appendChild(cursor);
+            remoteCursors[userId] = cursor;
+        }
+        
+        // Position the cursor at the right location in the textarea
+        const coords = getCaretCoordinates(contentInput, position);
+        const rect = contentInput.getBoundingClientRect();
+        cursor.style.left = (rect.left + coords.left) + 'px';
+        cursor.style.top = (rect.top + coords.top) + 'px';
+        
+        // Remember the position
+        lastCursorPositions[userId] = position;
+        
+        // Add to current collaborators
+        if (!currentCollaborators[userId]) {
+            currentCollaborators[userId] = userName;
+            updateCollaboratorsList();
+        }
+        
+        // Set a timeout to remove cursor after inactivity
+        if (cursor.timeout) clearTimeout(cursor.timeout);
+        cursor.timeout = setTimeout(() => {
+            removeRemoteCursor(userId);
+        }, 10000); // 10 seconds
+    }
+
+    // Remove a remote cursor
+    function removeRemoteCursor(userId) {
+        if (remoteCursors[userId]) {
+            document.body.removeChild(remoteCursors[userId]);
+            delete remoteCursors[userId];
+        }
+    }
+
+    // Generate a consistent color for a user
+    function getColorForUser(userId) {
+        // List of distinctive colors
+        const colors = [
+            '#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', 
+            '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4'
+        ];
+        
+        // Use modulo to ensure we always get a valid index
+        const colorIndex = parseInt(userId, 10) % colors.length;
+        return colors[colorIndex];
+    }
+
+    // Update the collaborators list panel
+    function updateCollaboratorsList() {
+        if (!isCollaborationEnabled) return;
+        
+        // Show the panel if there are collaborators
+        const collabCount = Object.keys(currentCollaborators).length;
+        if (collabCount > 0) {
+            collaboratorsPanel.classList.remove('d-none');
+            
+            // Update the list
+            collaboratorsList.innerHTML = '';
+            
+            for (const [userId, userName] of Object.entries(currentCollaborators)) {
+                const userColor = getColorForUser(userId);
+                const li = document.createElement('li');
+                li.className = 'list-group-item d-flex align-items-center py-2';
+                
+                // Get first letter of user's name for avatar
+                const firstLetter = userName.charAt(0).toUpperCase();
+                
+                li.innerHTML = `
+                    <div class="user-avatar" style="background-color: ${userColor}">${firstLetter}</div>
+                    <span>${userName}</span>
+                `;
+                
+                collaboratorsList.appendChild(li);
+            }
+        } else {
+            collaboratorsPanel.classList.add('d-none');
+        }
+    }
+
+    // Show toast notification for collaboration events
+    function showCollaborationToast(message) {
+        const toast = document.getElementById('collaborationToast');
+        const toastBody = document.getElementById('collaborationToastBody');
+        
+        if (toast && toastBody) {
+            toastBody.textContent = message;
+            
+            // Use Bootstrap's toast API if available, otherwise manually show/hide
+            if (typeof bootstrap !== 'undefined') {
+                const bsToast = new bootstrap.Toast(toast);
+                bsToast.show();
+            } else {
+                toast.classList.add('show');
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            }
+        }
+    }
+
+    // Utility function to get caret coordinates in a textarea
+    // Adapted from https://github.com/component/textarea-caret-position
+    function getCaretCoordinates(element, position) {
+        // Create a dummy element to measure text dimensions
+        const div = document.createElement('div');
+        const style = div.style;
+        const computed = window.getComputedStyle(element);
+        
+        // Copy styles that affect text dimensions
+        style.width = element.offsetWidth + 'px';
+        style.height = element.offsetHeight + 'px';
+        style.fontSize = computed.fontSize;
+        style.fontFamily = computed.fontFamily;
+        style.fontWeight = computed.fontWeight;
+        style.lineHeight = computed.lineHeight;
+        style.paddingLeft = computed.paddingLeft;
+        style.paddingTop = computed.paddingTop;
+        style.paddingRight = computed.paddingRight;
+        style.paddingBottom = computed.paddingBottom;
+        style.boxSizing = 'border-box';
+        style.whiteSpace = 'pre-wrap';
+        style.wordWrap = 'break-word';
+        style.position = 'absolute';
+        style.visibility = 'hidden';
+        document.body.appendChild(div);
+        
+        // Get text up to position
+        const text = element.value.substring(0, position);
+        
+        // Add a span at the position to measure its coordinates
+        div.textContent = text;
+        const span = document.createElement('span');
+        span.textContent = element.value.substring(position) || '.'; // Add a period if at the end
+        div.appendChild(span);
+        
+        const coords = {
+            top: span.offsetTop + parseInt(computed.borderTopWidth, 10),
+            left: span.offsetLeft + parseInt(computed.borderLeftWidth, 10),
+            height: parseInt(computed.lineHeight, 10)
+        };
+        
+        document.body.removeChild(div);
+        return coords;
+    }
 });
 </script>

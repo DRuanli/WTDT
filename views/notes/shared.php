@@ -14,7 +14,7 @@
                 <div class="text-muted small">
                     <p>This page shows notes that other users have shared with you. 
                     Notes are organized by most recently shared.</p>
-                    <p class="mb-0"><i class="fas fa-info-circle me-1"></i> Click on a note to view its content.</p>
+                    <p class="mb-0"><i class="fas fa-info-circle me-1"></i> Notes with <span class="badge bg-success">Can Edit</span> support real-time collaboration.</p>
                 </div>
             </div>
         </div>
@@ -104,6 +104,12 @@
                                             <i class="fas fa-lock"></i>
                                         </span>
                                     <?php endif; ?>
+                                    
+                                    <?php if (isset($note['can_edit']) && $note['can_edit']): ?>
+                                        <span class="me-2 text-success" title="Real-time collaboration enabled">
+                                            <i class="fas fa-users"></i>
+                                        </span>
+                                    <?php endif; ?>
                                 </div>
                                 
                                 <a href="<?= BASE_URL ?>/notes/edit/<?= $note['id'] ?>" class="btn btn-sm btn-primary">
@@ -121,3 +127,51 @@
         <?php endif; ?>
     </div>
 </div>
+
+<!-- Real-time collaboration notification toast -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050;">
+    <div id="collaborationToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <i class="fas fa-users me-2 text-primary"></i>
+            <strong class="me-auto">Collaboration</strong>
+            <small>Just now</small>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="collaborationToastBody">
+            Someone is editing this note.
+        </div>
+    </div>
+</div>
+
+<!-- For remote cursors when collaborating -->
+<style>
+.remote-cursor {
+    position: absolute;
+    z-index: 100;
+    pointer-events: none;
+}
+
+.remote-cursor-label {
+    position: absolute;
+    top: -20px;
+    left: 0;
+    background-color: #3498db;
+    color: white;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.remote-cursor-caret {
+    width: 2px;
+    height: 20px;
+    background-color: #3498db;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+</style>

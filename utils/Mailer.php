@@ -4,6 +4,7 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
 // Check if PHPMailer is available, otherwise use default email functions
+// Check if PHPMailer is available, otherwise use default email functions
 function hasPhpMailer() {
     return class_exists('PHPMailer\PHPMailer\PHPMailer');
 }
@@ -11,6 +12,11 @@ function hasPhpMailer() {
 // Send email with PHPMailer if available
 function sendEmailWithPhpMailer($to, $subject, $message) {
     try {
+        // Make sure autoloader is included
+        if (file_exists(ROOT_PATH . '/vendor/autoload.php')) {
+            require_once ROOT_PATH . '/vendor/autoload.php';
+        }
+        
         $mail = new PHPMailer(true);
         
         // Server settings
@@ -35,7 +41,7 @@ function sendEmailWithPhpMailer($to, $subject, $message) {
         return $mail->send();
     } catch (Exception $e) {
         // Log error
-        error_log('Mailer Error: ' . $mail->ErrorInfo);
+        error_log('Mailer Error: ' . $e->getMessage());
         return false;
     }
 }

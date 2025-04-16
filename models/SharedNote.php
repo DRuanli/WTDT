@@ -81,6 +81,14 @@ class SharedNote {
                     $can_edit ? 'edit' : 'view'
                 );
                 
+                // Create a notification in database
+                $this->createNotification($recipient_id, 'share_permission_changed', [
+                    'note_id' => $note_id,
+                    'note_title' => $note['title'],
+                    'owner_name' => $owner['display_name'],
+                    'permission' => $can_edit ? 'edit' : 'view-only'
+                ]);
+                
                 return [
                     'success' => true,
                     'message' => 'Sharing permissions updated successfully'
@@ -115,6 +123,14 @@ class SharedNote {
                 $can_edit ? 'edit' : 'view'
             );
             
+            // Create a notification in database
+            $this->createNotification($recipient_id, 'new_shared_note', [
+                'note_id' => $note_id,
+                'note_title' => $note['title'], 
+                'owner_name' => $owner['display_name'],
+                'permission' => $can_edit ? 'edit' : 'view-only'
+            ]);
+            
             return [
                 'success' => true,
                 'share_id' => $stmt->insert_id
@@ -147,6 +163,39 @@ class SharedNote {
         
         return $shares;
     }
+
+    private function createNotification($user_id, $type, $data) {
+        // Check if notifications table exists, create if not
+        $this->ensureNotificationsTable();
+        
+        // Serialize data
+        $serialized_data = json_encode($data);
+        
+        // Insert notification
+        $stmt = $this->db->prepare("INSERT INTO notifications (user_id, type, data, is_read, created_at) VALUES (?, ?, ?, 0, NOW())");
+        $stmt->bind_param("iss", $user_id, $type, $serialized_data);
+        return $stmt->execute();
+    }
+
+    private function ensureNotificationsTable() {
+        // Check if table exists
+        $result = $this->db->query("SHOW TABLES LIKE 'notifications'");
+        if ($result->num_rows == 0) {
+            // Create notifications table
+            $this->db->query("
+                CREATE TABLE notifications (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    type VARCHAR(50) NOT NULL,
+                    data TEXT NOT NULL,
+                    is_read TINYINT(1) DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            ");
+        }
+    }
+    
     
     // Remove sharing
     public function removeShare($share_id, $owner_id) {

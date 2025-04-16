@@ -94,3 +94,15 @@ ALTER TABLE users ADD COLUMN avatar_path VARCHAR(255) DEFAULT NULL;
 ALTER TABLE notes 
 ADD COLUMN note_password VARCHAR(255) NULL 
 AFTER is_password_protected;
+
+-- Run this SQL in your database to create the notifications table
+
+CREATE TABLE IF NOT EXISTS `notifications` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `user_id` INT NOT NULL,
+  `type` VARCHAR(50) NOT NULL,
+  `data` TEXT NOT NULL,
+  `is_read` TINYINT(1) DEFAULT 0,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+);

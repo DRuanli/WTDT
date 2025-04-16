@@ -358,9 +358,11 @@ class AuthController {
                     $emailSent = sendActivationEmail($user['email'], $user['display_name'], $result['activation_token']);
                     
                     if ($emailSent) {
-                        Session::setFlash('success', 'Activation email has been resent. Please check your inbox.');
+                        Session::setFlash('success', 'Activation email has been resent to ' . $user['email'] . '. Please check your inbox and spam folder.');
                     } else {
-                        Session::setFlash('error', 'Failed to send activation email. Please contact support.');
+                        // Log error for debugging
+                        error_log('Failed to send activation email to ' . $user['email']);
+                        Session::setFlash('error', 'Failed to send activation email. Please check your email settings or contact support.');
                     }
                 } else {
                     Session::setFlash('error', $result['message']);
@@ -397,9 +399,10 @@ class AuthController {
                     $emailSent = sendActivationEmail($email, $result['display_name'], $result['activation_token']);
                     
                     if ($emailSent) {
-                        Session::setFlash('success', 'Activation email has been resent. Please check your inbox.');
+                        Session::setFlash('success', 'Activation email has been resent to ' . $email . '. Please check your inbox and spam folder.');
                     } else {
-                        Session::setFlash('error', 'Failed to send activation email. Please contact support.');
+                        error_log('Failed to send activation email to ' . $email);
+                        Session::setFlash('error', 'Failed to send activation email. Please check your email address or contact support.');
                     }
                     
                     header('Location: ' . BASE_URL . '/login');

@@ -31,6 +31,17 @@ switch ($font_size) {
         $font_size_class = 'font-size-large';
         break;
 }
+
+// Load notifications if user is logged in
+$unread_notifications = [];
+$unread_count = 0;
+if (Session::isLoggedIn()) {
+    require_once MODELS_PATH . '/Notification.php';
+    $notificationModel = new Notification();
+    $user_id = Session::getUserId();
+    $unread_notifications = $notificationModel->getUnreadNotifications($user_id);
+    $unread_count = count($unread_notifications);
+}
 ?>
 
 <!DOCTYPE html>
@@ -61,7 +72,6 @@ switch ($font_size) {
     
     <!-- PWA support -->
     <?php if (defined('ENABLE_OFFLINE_MODE') && ENABLE_OFFLINE_MODE): ?>
-        
         <meta name="theme-color" content="#4a89dc">
     <?php endif; ?>
     
@@ -129,6 +139,11 @@ switch ($font_size) {
         font_size: "<?= $font_size ?>",
         note_color: "<?= $note_color ?>"
     };
+    
+    <?php if (Session::isLoggedIn()): ?>
+    const USER_ID = <?= Session::getUserId() ?>;
+    const ENABLE_WEBSOCKETS = <?= defined('ENABLE_WEBSOCKETS') && ENABLE_WEBSOCKETS ? 'true' : 'false' ?>;
+    <?php endif; ?>
 </script>
 <body class="d-flex flex-column min-vh-100 bg-light <?= $font_size_class ?> note-color-<?= $note_color ?>" data-bs-theme="<?= $theme ?>">
     <?php if (Session::isLoggedIn()): ?>
@@ -160,6 +175,73 @@ switch ($font_size) {
                         </li>
                     </ul>
                     <ul class="navbar-nav">
+                        <!-- Notifications Dropdown -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-bell"></i>
+                                <?php if ($unread_count > 0): ?>
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                        <?= $unread_count ?>
+                                        <span class="visually-hidden">unread notifications</span>
+                                    </span>
+                                <?php endif; ?>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="notificationsDropdown" style="width: 300px; max-height: 400px; overflow-y: auto;">
+                                <div class="p-2 border-bottom d-flex justify-content-between align-items-center">
+                                    <h6 class="dropdown-header m-0 p-0">Notifications</h6>
+                                    <?php if ($unread_count > 0): ?>
+                                        <a href="<?= BASE_URL ?>/notifications/mark-all-read" class="btn btn-sm btn-link text-decoration-none">Mark all read</a>
+                                    <?php endif; ?>
+                                </div>
+                                <?php if (empty($unread_notifications)): ?>
+                                    <div class="p-3 text-center text-muted">
+                                        <p class="mb-0">No new notifications</p>
+                                    </div>
+                                <?php else: ?>
+                                    <?php foreach ($unread_notifications as $notification): ?>
+                                        <div class="dropdown-item p-2 border-bottom notification-item">
+                                            <?php if ($notification['type'] === 'new_shared_note'): ?>
+                                                <div class="d-flex">
+                                                    <div class="me-2 text-primary">
+                                                        <i class="fas fa-share-alt"></i>
+                                                    </div>
+                                                    <div>
+                                                        <p class="mb-0"><strong><?= htmlspecialchars($notification['data']['owner_name']) ?></strong> shared a note with you</p>
+                                                        <p class="mb-0 small text-muted">
+                                                            "<?= htmlspecialchars($notification['data']['note_title']) ?>" 
+                                                            (<?= $notification['data']['permission'] ?>)
+                                                        </p>
+                                                        <div class="mt-1">
+                                                            <a href="<?= BASE_URL ?>/notes/shared" class="btn btn-sm btn-primary">View</a>
+                                                            <a href="<?= BASE_URL ?>/notifications/mark-read/<?= $notification['id'] ?>" class="btn btn-sm btn-link">Dismiss</a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            <?php elseif ($notification['type'] === 'share_permission_changed'): ?>
+                                                <div class="d-flex">
+                                                    <div class="me-2 text-info">
+                                                        <i class="fas fa-edit"></i>
+                                                    </div>
+                                                    <div>
+                                                        <p class="mb-0"><strong><?= htmlspecialchars($notification['data']['owner_name']) ?></strong> updated sharing permissions</p>
+                                                        <p class="mb-0 small text-muted">
+                                                            "<?= htmlspecialchars($notification['data']['note_title']) ?>" 
+                                                            is now <?= $notification['data']['permission'] ?>
+                                                        </p>
+                                                        <div class="mt-1">
+                                                            <a href="<?= BASE_URL ?>/notes/shared" class="btn btn-sm btn-primary">View</a>
+                                                            <a href="<?= BASE_URL ?>/notifications/mark-read/<?= $notification['id'] ?>" class="btn btn-sm btn-link">Dismiss</a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </div>
+                        </li>
+                        
+                        <!-- User Profile Dropdown -->
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
                                 <i class="fas fa-user-circle me-1"></i> <?= htmlspecialchars(Session::get('user_display_name')) ?>

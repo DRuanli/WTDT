@@ -107,6 +107,27 @@ switch ($page) {
         $controller = new AuthController();
         $controller->resetPassword();
         break;
+
+    case 'notifications':
+        include_once 'controllers/NotificationController.php';
+        $controller = new NotificationController();
+        
+        // Get action from URL if available
+        $action = isset(explode('/', $url)[1]) ? explode('/', $url)[1] : 'index';
+        
+        switch ($action) {
+            case 'mark-read':
+                $id = isset(explode('/', $url)[2]) ? explode('/', $url)[2] : null;
+                $controller->markRead($id);
+                break;
+            case 'mark-all-read':
+                $controller->markAllRead();
+                break;
+            default:
+                $controller->index();
+                break;
+        }
+        break;
         
     // Update the notes case in the switch statement in index.php
     case 'notes':
