@@ -88,6 +88,7 @@ if (Session::isLoggedIn()) {
             font-size: 1.125rem !important;
         }
         
+        
         /* Note color preferences */
         .note-color-white .note-card,
         .note-color-white .card.h-100,
