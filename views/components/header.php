@@ -80,23 +80,8 @@ if (Session::isLoggedIn()) {
         <link rel="apple-touch-icon" href="<?= ASSETS_URL ?>/img/icon-192x192.png">
     <?php endif; ?>
     
-    <!-- Enhanced styles for header and components -->
+    <!-- Custom preferences styles -->
     <style>
-        :root {
-            --primary-color: #4a89dc;
-            --primary-hover: #3a77c5;
-            --secondary-color: #6c757d;
-            --light-bg: #f8f9fa;
-            --border-radius: 12px;
-            --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            --transition: all 0.3s ease;
-        }
-        
-        body {
-            background-color: #f0f2f5;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-        
         /* Font size preferences */
         .font-size-small {
             font-size: 0.875rem !important;
@@ -108,221 +93,6 @@ if (Session::isLoggedIn()) {
             font-size: 1.125rem !important;
         }
         
-        /* Navbar styling */
-        .navbar {
-            padding: 0.75rem 1rem;
-            transition: var(--transition);
-            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
-        }
-        
-        .navbar-brand {
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            transition: var(--transition);
-        }
-        
-        .navbar-brand:hover {
-            transform: translateY(-2px);
-        }
-        
-        .navbar-brand i {
-            transition: transform 0.3s ease;
-        }
-        
-        .navbar-brand:hover i {
-            transform: rotate(-10deg);
-        }
-        
-        .navbar-nav .nav-link {
-            font-weight: 500;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            transition: var(--transition);
-            position: relative;
-        }
-        
-        .navbar-nav .nav-link::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            width: 0;
-            height: 2px;
-            background-color: currentColor;
-            transition: all 0.3s ease;
-            transform: translateX(-50%);
-            opacity: 0;
-        }
-        
-        .navbar-nav .nav-link:hover::after,
-        .navbar-nav .nav-link.active::after {
-            width: 60%;
-            opacity: 1;
-        }
-        
-        .navbar-nav .nav-link i {
-            transition: transform 0.3s ease;
-        }
-        
-        .navbar-nav .nav-link:hover i {
-            transform: translateY(-2px);
-        }
-        
-        /* Notification badge */
-        .notification-badge {
-            position: absolute;
-            top: 0;
-            right: 0;
-            transform: translate(40%, -40%);
-            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        
-        .nav-link:hover .notification-badge {
-            transform: translate(40%, -40%) scale(1.1);
-        }
-        
-        /* User dropdown menu */
-        .dropdown-menu {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.12);
-            overflow: hidden;
-        }
-        
-        .dropdown-item {
-            padding: 0.65rem 1.25rem;
-            transition: var(--transition);
-        }
-        
-        .dropdown-item:hover {
-            background-color: rgba(74, 137, 220, 0.1);
-            transform: translateX(5px);
-        }
-        
-        .dropdown-item i {
-            transition: transform 0.3s ease;
-        }
-        
-        .dropdown-item:hover i {
-            transform: translateY(-2px);
-        }
-        
-        /* Notification dropdown */
-        .notification-list {
-            max-height: 360px;
-            overflow-y: auto;
-        }
-        
-        .notification-list::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .notification-list::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-        
-        .notification-list::-webkit-scrollbar-thumb {
-            background: #ccc;
-            border-radius: 10px;
-        }
-        
-        .notification-item {
-            transition: var(--transition);
-            border-left: 3px solid transparent;
-        }
-        
-        .notification-item:hover {
-            background-color: rgba(0, 0, 0, 0.02);
-            border-left-color: var(--primary-color);
-        }
-        
-        .notification-item.unread {
-            background-color: rgba(74, 137, 220, 0.05);
-        }
-        
-        .notification-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            margin-right: 12px;
-            flex-shrink: 0;
-        }
-        
-        .notification-icon.share {
-            background: linear-gradient(45deg, #4a89dc, #5a9cef);
-        }
-        
-        .notification-icon.edit {
-            background: linear-gradient(45deg, #17a2b8, #1fc8e3);
-        }
-        
-        /* User avatar in the navbar */
-        .user-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            transition: var(--transition);
-        }
-        
-        .nav-link:hover .user-avatar {
-            transform: scale(1.1);
-            border-color: rgba(255, 255, 255, 0.8);
-        }
-        
-        /* Alert customization */
-        .alert {
-            border-radius: 10px;
-            border: none;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
-        }
-        
-        .alert-warning {
-            background-color: rgba(255, 193, 7, 0.15);
-            color: #856404;
-        }
-        
-        /* Animated wave for unverified account alert */
-        .wave-alert {
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .wave-alert::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, 
-                transparent, 
-                rgba(255, 255, 255, 0.2), 
-                transparent);
-            animation: wave 2s infinite linear;
-            z-index: 1;
-        }
-        
-        @keyframes wave {
-            0% { left: -100%; }
-            100% { left: 100%; }
-        }
-        
-        /* Responsive adjustments */
-        @media (max-width: 991px) {
-            .navbar-nav .nav-link {
-                padding: 0.75rem 1rem;
-            }
-            
-            .navbar-nav .nav-link::after {
-                display: none;
-            }
-        }
         
         /* Note color preferences */
         .note-color-white .note-card,
@@ -405,14 +175,13 @@ if (Session::isLoggedIn()) {
     const ENABLE_WEBSOCKETS = <?= defined('ENABLE_WEBSOCKETS') && ENABLE_WEBSOCKETS ? 'true' : 'false' ?>;
     <?php endif; ?>
 </script>
-<body class="d-flex flex-column min-vh-100 <?= $font_size_class ?> note-color-<?= $note_color ?>" data-bs-theme="<?= $theme ?>">
+<body class="d-flex flex-column min-vh-100 bg-light <?= $font_size_class ?> note-color-<?= $note_color ?>" data-bs-theme="<?= $theme ?>">
     <?php if (Session::isLoggedIn()): ?>
         <header>
             <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
                 <div class="container">
-                    <a class="navbar-brand d-flex align-items-center" href="<?= BASE_URL ?>">
-                        <i class="fas fa-sticky-note me-2"></i>
-                        <span><?= APP_NAME ?></span>
+                    <a class="navbar-brand" href="<?= BASE_URL ?>">
+                        <i class="fas fa-sticky-note me-2"></i><?= APP_NAME ?>
                     </a>
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
                         <span class="navbar-toggler-icon"></span>
@@ -437,140 +206,17 @@ if (Session::isLoggedIn()) {
                         </ul>
                         <ul class="navbar-nav">
                             <!-- Include the notification dropdown -->
-                            <li class="nav-item dropdown">
-                                <a class="nav-link position-relative" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fas fa-bell"></i>
-                                    <?php if ($unread_count > 0): ?>
-                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge">
-                                            <?= $unread_count ?>
-                                            <span class="visually-hidden">unread notifications</span>
-                                        </span>
-                                    <?php endif; ?>
-                                </a>
-                                <div class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="notificationsDropdown" style="width: 320px; max-height: 500px; overflow-y: auto;">
-                                    <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
-                                        <h6 class="dropdown-header m-0 p-0 fw-bold">Notifications</h6>
-                                        <?php if ($unread_count > 0): ?>
-                                            <a href="<?= BASE_URL ?>/notifications/mark-all-read" class="btn btn-sm btn-primary rounded-pill px-3">
-                                                <i class="fas fa-check-double me-1"></i> Mark all read
-                                            </a>
-                                        <?php endif; ?>
-                                    </div>
-                                    
-                                    <?php if (empty($unread_notifications)): ?>
-                                        <div class="p-4 text-center text-muted">
-                                            <div class="mb-3">
-                                                <i class="fas fa-bell-slash fa-3x opacity-50"></i>
-                                            </div>
-                                            <p class="mb-0">No new notifications</p>
-                                        </div>
-                                    <?php else: ?>
-                                        <div class="notification-list">
-                                            <?php 
-                                            // Group notifications by entity (note) to avoid duplicates
-                                            $grouped_notifications = [];
-                                            foreach ($unread_notifications as $notification) {
-                                                if (!empty($notification['data']['note_id'])) {
-                                                    $key = $notification['type'] . '-' . $notification['data']['note_id'];
-                                                    // Keep only the most recent notification per note and type
-                                                    if (!isset($grouped_notifications[$key]) || 
-                                                        strtotime($notification['created_at']) > strtotime($grouped_notifications[$key]['created_at'])) {
-                                                        $grouped_notifications[$key] = $notification;
-                                                    }
-                                                } else {
-                                                    // For notifications without note_id, keep as is
-                                                    $grouped_notifications[] = $notification;
-                                                }
-                                            }
-                                            
-                                            // Display the grouped notifications
-                                            foreach ($grouped_notifications as $notification): 
-                                            ?>
-                                                <div class="dropdown-item p-3 border-bottom notification-item <?= !$notification['is_read'] ? 'unread' : '' ?>">
-                                                    <?php if ($notification['type'] === 'new_shared_note'): ?>
-                                                        <div class="d-flex">
-                                                            <div class="notification-icon share">
-                                                                <i class="fas fa-share-alt"></i>
-                                                            </div>
-                                                            <div>
-                                                                <p class="mb-1 fw-bold">Note Shared With You</p>
-                                                                <p class="mb-1 small">
-                                                                    <strong><?= htmlspecialchars($notification['data']['owner_name']) ?></strong> shared 
-                                                                    "<strong><?= htmlspecialchars($notification['data']['note_title']) ?></strong>"
-                                                                </p>
-                                                                <p class="text-muted small mb-2">
-                                                                    <?= formatTimeAgo($notification['created_at']) ?>
-                                                                </p>
-                                                                <div class="d-flex mt-1">
-                                                                    <a href="<?= BASE_URL ?>/notes/shared" class="btn btn-sm btn-primary me-2 rounded-pill">
-                                                                        <i class="fas fa-eye me-1"></i> View
-                                                                    </a>
-                                                                    <a href="<?= BASE_URL ?>/notifications/mark-read/<?= $notification['id'] ?>" class="btn btn-sm btn-link text-decoration-none">
-                                                                        Dismiss
-                                                                    </a>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    <?php elseif ($notification['type'] === 'share_permission_changed'): ?>
-                                                        <div class="d-flex">
-                                                            <div class="notification-icon edit">
-                                                                <i class="fas fa-edit"></i>
-                                                            </div>
-                                                            <div>
-                                                                <p class="mb-1 fw-bold">Permissions Updated</p>
-                                                                <p class="mb-1 small">
-                                                                    Your access to "<strong><?= htmlspecialchars($notification['data']['note_title']) ?></strong>" 
-                                                                    is now <span class="<?= $notification['data']['permission'] === 'edit' ? 'text-success' : 'text-secondary' ?>">
-                                                                        <?= $notification['data']['permission'] ?>
-                                                                    </span>
-                                                                </p>
-                                                                <p class="text-muted small mb-2">
-                                                                    <?= formatTimeAgo($notification['created_at']) ?>
-                                                                </p>
-                                                                <div class="d-flex mt-1">
-                                                                    <a href="<?= BASE_URL ?>/notes/shared" class="btn btn-sm btn-primary me-2 rounded-pill">
-                                                                        <i class="fas fa-eye me-1"></i> View
-                                                                    </a>
-                                                                    <a href="<?= BASE_URL ?>/notifications/mark-read/<?= $notification['id'] ?>" class="btn btn-sm btn-link text-decoration-none">
-                                                                        Dismiss
-                                                                    </a>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    <?php endif; ?>
-                                                </div>
-                                            <?php endforeach; ?>
-                                        </div>
-                                        
-                                        <div class="text-center p-2 border-top">
-                                            <a href="<?= BASE_URL ?>/notifications" class="btn btn-sm btn-link text-decoration-none">
-                                                View all notifications
-                                            </a>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
-                            </li>
+                            <?php include VIEWS_PATH . '/components/notification-dropdown.php'; ?>
                             
                             <!-- User Profile Dropdown -->
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                                    <?php if (!empty($userModel->getUserById(Session::getUserId())['avatar_path'])): ?>
-                                        <img src="<?= BASE_URL ?>/uploads/avatars/<?= $userModel->getUserById(Session::getUserId())['avatar_path'] ?>" 
-                                             alt="Avatar" class="user-avatar me-1">
-                                    <?php else: ?>
-                                        <i class="fas fa-user-circle me-1"></i>
-                                    <?php endif; ?>
-                                    <span class="d-none d-lg-inline"><?= htmlspecialchars(Session::get('user_display_name')) ?></span>
+                                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-user-circle me-1"></i> <?= htmlspecialchars(Session::get('user_display_name')) ?>
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li>
                                         <a class="dropdown-item" href="<?= BASE_URL ?>/profile">
                                             <i class="fas fa-user me-2"></i> My Profile
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" href="<?= BASE_URL ?>/profile/edit">
-                                            <i class="fas fa-edit me-2"></i> Edit Profile
                                         </a>
                                     </li>
                                     <li>
@@ -580,7 +226,7 @@ if (Session::isLoggedIn()) {
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
-                                        <a class="dropdown-item text-danger" href="<?= BASE_URL ?>/logout">
+                                        <a class="dropdown-item" href="<?= BASE_URL ?>/logout">
                                             <i class="fas fa-sign-out-alt me-2"></i> Logout
                                         </a>
                                     </li>
@@ -599,15 +245,12 @@ if (Session::isLoggedIn()) {
         $user = (new User())->getUserById(Session::getUserId());
         if ($user && !$user['is_activated']):
     ?>
-    <div class="alert alert-warning text-center mb-0 rounded-0 wave-alert">
-        <div class="d-flex align-items-center justify-content-center">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            <span>Your account is not verified. Please check your email to complete the activation process.</span>
-            <form action="<?= BASE_URL ?>/resend-activation" method="POST" class="d-inline ms-2">
-                <input type="hidden" name="resend" value="1">
-                <button type="submit" class="btn btn-sm btn-warning rounded-pill">Resend activation email</button>
-            </form>
-        </div>
+    <div class="alert alert-warning text-center mb-0 rounded-0">
+        Your account is not verified. Please check your email to complete the activation process.
+        <form action="<?= BASE_URL ?>/resend-activation" method="POST" class="d-inline">
+            <input type="hidden" name="resend" value="1">
+            <button type="submit" class="btn btn-link alert-link p-0 d-inline">Resend activation email</button>
+        </form>
     </div>
     <?php 
         endif;
@@ -615,5 +258,4 @@ if (Session::isLoggedIn()) {
     ?>
     
     <main class="flex-grow-1 py-4">
-        <div class="container"><?= PHP_EOL ?></document_content>
-</invoke>
+        <div class="container"><?= PHP_EOL ?>
