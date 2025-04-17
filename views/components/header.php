@@ -72,7 +72,12 @@ if (Session::isLoggedIn()) {
     
     <!-- PWA support -->
     <?php if (defined('ENABLE_OFFLINE_MODE') && ENABLE_OFFLINE_MODE): ?>
+        <link rel="manifest" href="<?= BASE_URL ?>/manifest.json">
         <meta name="theme-color" content="#4a89dc">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black">
+        <meta name="apple-mobile-web-app-title" content="<?= APP_NAME ?>">
+        <link rel="apple-touch-icon" href="<?= ASSETS_URL ?>/img/icon-192x192.png">
     <?php endif; ?>
     
     <!-- Custom preferences styles -->

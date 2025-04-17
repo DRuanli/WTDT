@@ -42,6 +42,41 @@
                     });
             });
         }
+        
+        // Check if we can install this as an app
+        let deferredPrompt;
+        const addBtn = document.createElement('button');
+        addBtn.id = 'install-button';
+        addBtn.className = 'btn btn-success btn-sm position-fixed bottom-0 end-0 m-3';
+        addBtn.innerHTML = '<i class="fas fa-download me-1"></i> Install App';
+        addBtn.style.display = 'none';
+        addBtn.style.zIndex = '1000';
+        document.body.appendChild(addBtn);
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent Chrome 67 and earlier from automatically showing the prompt
+            e.preventDefault();
+            // Stash the event so it can be triggered later
+            deferredPrompt = e;
+            // Update UI to notify the user they can add to home screen
+            addBtn.style.display = 'block';
+
+            addBtn.addEventListener('click', () => {
+                // Hide our user interface that shows our install button
+                addBtn.style.display = 'none';
+                // Show the install prompt
+                deferredPrompt.prompt();
+                // Wait for the user to respond to the prompt
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    } else {
+                        console.log('User dismissed the install prompt');
+                    }
+                    deferredPrompt = null;
+                });
+            });
+        });
     </script>
     <?php endif; ?>
     

@@ -19,7 +19,8 @@ Session::start();
 // Except for login, register, activation, password reset pages
 $allowed_pages = [
     'login', 'register', 'activate', 'reset-password',
-    'password-reset', 'verify-reset', 'new-password'
+    'password-reset', 'verify-reset', 'new-password',
+    'offline', 'manifest.json', 'service-worker.js' // Add these for PWA support
 ];
 
 // Also check if the current path has .php extension (for direct access)
@@ -127,6 +128,25 @@ switch ($page) {
                 $controller->index();
                 break;
         }
+        break;
+
+    case 'offline':
+        include_once 'controllers/OfflineController.php';
+        $controller = new OfflineController();
+        $controller->index();
+        break;
+
+    case 'manifest.json':
+        // Serve the manifest file
+        header('Content-Type: application/json');
+        readfile(ROOT_PATH . '/manifest.json');
+        break;
+        
+    case 'service-worker.js':
+        // Serve the service worker file
+        header('Content-Type: application/javascript');
+        header('Service-Worker-Allowed: /');
+        readfile(ROOT_PATH . '/service-worker.js');
         break;
         
     // Update the notes case in the switch statement in index.php
