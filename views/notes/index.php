@@ -123,17 +123,48 @@
                                     </div>
                                 <?php endif; ?>
                                 
+                                <!-- Check if note has images and display the first one as thumbnail -->
+                                <?php 
+                                $hasImages = isset($note['image_count']) && $note['image_count'] > 0; 
+                                $isProtected = isset($note['is_password_protected']) && $note['is_password_protected'];
+                                
+                                // Get the URL for the note - either password verification or direct edit
+                                $noteUrl = $isProtected 
+                                    ? BASE_URL . '/notes/verify-password/' . $note['id'] 
+                                    : BASE_URL . '/notes/edit/' . $note['id'];
+                                
+                                // Check if the note has images associated with it
+                                if ($hasImages && isset($note['images']) && !empty($note['images'])): 
+                                    $firstImage = $note['images'][0];
+                                ?>
+                                <div class="card-img-top position-relative note-thumbnail-container">
+                                    <a href="<?= $noteUrl ?>">
+                                        <img src="<?= UPLOADS_URL . '/' . $firstImage['file_path'] ?>" 
+                                             class="note-thumbnail" alt="Note image">
+                                        
+                                        <?php if ($note['image_count'] > 1): ?>
+                                            <div class="position-absolute bottom-0 end-0 badge bg-dark m-2">
+                                                <i class="fas fa-images me-1"></i> <?= $note['image_count'] ?>
+                                            </div>
+                                        <?php endif; ?>
+                                        
+                                        <?php if ($isProtected): ?>
+                                            <div class="image-lock-overlay">
+                                                <i class="fas fa-lock fa-2x"></i>
+                                            </div>
+                                        <?php endif; ?>
+                                    </a>
+                                </div>
+                                <?php endif; ?>
+                                
                                 <div class="card-header pb-0 bg-transparent d-flex justify-content-between align-items-center">
                                     <h5 class="card-title mb-0 text-truncate">
-                                        <?php if (isset($note['is_password_protected']) && $note['is_password_protected']): ?>
-                                            <a href="<?= BASE_URL ?>/notes/verify-password/<?= $note['id'] ?>" class="text-decoration-none">
-                                                <i class="fas fa-lock me-1 text-warning"></i><?= htmlspecialchars($note['title']) ?>
-                                            </a>
-                                        <?php else: ?>
-                                            <a href="<?= BASE_URL ?>/notes/edit/<?= $note['id'] ?>" class="text-decoration-none">
-                                                <?= htmlspecialchars($note['title']) ?>
-                                            </a>
-                                        <?php endif; ?>
+                                        <a href="<?= $noteUrl ?>" class="text-decoration-none">
+                                            <?php if ($isProtected): ?>
+                                                <i class="fas fa-lock me-1 text-warning"></i>
+                                            <?php endif; ?>
+                                            <?= htmlspecialchars($note['title']) ?>
+                                        </a>
                                     </h5>
                                     
                                     <div class="dropdown">
@@ -148,7 +179,7 @@
                                                 </button>
                                             </li>
                                             <li>
-                                                <a class="dropdown-item" href="<?= BASE_URL ?>/notes/edit/<?= $note['id'] ?>">
+                                                <a class="dropdown-item" href="<?= $noteUrl ?>">
                                                     <i class="fas fa-edit me-2"></i> Edit
                                                 </a>
                                             </li>
@@ -159,7 +190,7 @@
                                             </li>
                                             <li>
                                                 <a class="dropdown-item" href="<?= BASE_URL ?>/notes/toggle-password/<?= $note['id'] ?>">
-                                                    <?php if (isset($note['is_password_protected']) && $note['is_password_protected']): ?>
+                                                    <?php if ($isProtected): ?>
                                                         <i class="fas fa-unlock me-2"></i> Remove Password
                                                     <?php else: ?>
                                                         <i class="fas fa-lock me-2"></i> Add Password
@@ -179,11 +210,21 @@
                                 <div class="card-body">
                                     <div class="card-text note-content">
                                         <?php 
-                                        $content = isset($note['content']) ? $note['content'] : '';
-                                        $preview = strip_tags($content);
-                                        $preview = substr($preview, 0, 150);
-                                        if (strlen($content) > 150) $preview .= '...';
-                                        echo nl2br(htmlspecialchars($preview));
+                                        if ($isProtected) {
+                                            // Show protected content placeholder
+                                            echo '<div class="protected-content text-center p-3">';
+                                            echo '<i class="fas fa-lock text-warning mb-2" style="font-size: 2rem;"></i>';
+                                            echo '<p class="mb-0">This note is password protected</p>';
+                                            echo '<a href="' . $noteUrl . '" class="btn btn-sm btn-outline-warning mt-2">Unlock</a>';
+                                            echo '</div>';
+                                        } else {
+                                            // Show actual content preview
+                                            $content = isset($note['content']) ? $note['content'] : '';
+                                            $preview = strip_tags($content);
+                                            $preview = substr($preview, 0, 150);
+                                            if (strlen($content) > 150) $preview .= '...';
+                                            echo nl2br(htmlspecialchars($preview));
+                                        }
                                         ?>
                                     </div>
                                     
@@ -206,7 +247,7 @@
                                             </span>
                                         <?php endif; ?>
                                         
-                                        <?php if (isset($note['is_password_protected']) && $note['is_password_protected']): ?>
+                                        <?php if ($isProtected): ?>
                                             <span class="me-2 text-warning" title="Password Protected">
                                                 <i class="fas fa-lock"></i>
                                             </span>
@@ -218,7 +259,7 @@
                                             </span>
                                         <?php endif; ?>
                                         
-                                        <?php if (isset($note['image_count']) && $note['image_count'] > 0): ?>
+                                        <?php if ($hasImages): ?>
                                             <span class="me-2" title="<?= $note['image_count'] ?> image(s) attached">
                                                 <i class="fas fa-image"></i> <?= $note['image_count'] ?>
                                             </span>
@@ -265,44 +306,67 @@
                             </thead>
                             <tbody>
                                 <?php foreach ($data['notes'] as $note): ?>
+                                    <?php 
+                                    $isProtected = isset($note['is_password_protected']) && $note['is_password_protected'];
+                                    $hasImages = isset($note['image_count']) && $note['image_count'] > 0;
+                                    
+                                    // Get the URL for the note - either password verification or direct edit
+                                    $noteUrl = $isProtected 
+                                        ? BASE_URL . '/notes/verify-password/' . $note['id'] 
+                                        : BASE_URL . '/notes/edit/' . $note['id'];
+                                    ?>
                                     <tr class="<?= isset($note['is_pinned']) && $note['is_pinned'] ? 'table-primary' : '' ?>">
-                                    <td class="text-center">
-                                        <?php if (isset($note['is_pinned']) && $note['is_pinned']): ?>
-                                            <i class="fas fa-thumbtack text-primary me-1" title="Pinned"></i>
-                                        <?php endif; ?>
-                                        
-                                        <?php if (isset($note['is_password_protected']) && $note['is_password_protected']): ?>
-                                            <i class="fas fa-lock text-warning me-1" title="Password Protected"></i>
-                                        <?php endif; ?>
-                                        
-                                        <?php if (isset($note['is_shared']) && $note['is_shared']): ?>
-                                            <i class="fas fa-share-alt text-info me-1" title="Shared with others"></i>
-                                        <?php endif; ?>
-                                        
-                                        <?php if (isset($note['image_count']) && $note['image_count'] > 0): ?>
-                                            <i class="fas fa-image text-secondary me-1" title="<?= $note['image_count'] ?> image(s) attached"></i>
-                                        <?php endif; ?>
-                                    </td>
+                                        <td class="text-center">
+                                            <?php if (isset($note['is_pinned']) && $note['is_pinned']): ?>
+                                                <i class="fas fa-thumbtack text-primary me-1" title="Pinned"></i>
+                                            <?php endif; ?>
+                                            
+                                            <?php if ($isProtected): ?>
+                                                <i class="fas fa-lock text-warning me-1" title="Password Protected"></i>
+                                            <?php endif; ?>
+                                            
+                                            <?php if (isset($note['is_shared']) && $note['is_shared']): ?>
+                                                <i class="fas fa-share-alt text-info me-1" title="Shared with others"></i>
+                                            <?php endif; ?>
+                                            
+                                            <?php if ($hasImages): ?>
+                                                <i class="fas fa-image text-secondary me-1" title="<?= $note['image_count'] ?> image(s) attached"></i>
+                                            <?php endif; ?>
+                                        </td>
                                         <td>
-                                            <strong>
-                                                <?php if (isset($note['is_password_protected']) && $note['is_password_protected']): ?>
-                                                    <a href="<?= BASE_URL ?>/notes/verify-password/<?= $note['id'] ?>" class="text-decoration-none">
-                                                        <?= htmlspecialchars($note['title']) ?>
+                                            <div class="d-flex align-items-center">
+                                                <?php if ($hasImages && isset($note['images']) && !empty($note['images'])): ?>
+                                                <div class="list-view-thumbnail me-2">
+                                                    <a href="<?= $noteUrl ?>">
+                                                        <img src="<?= UPLOADS_URL . '/' . $note['images'][0]['file_path'] ?>" 
+                                                             alt="Note thumbnail" class="rounded">
+                                                        <?php if ($isProtected): ?>
+                                                            <div class="image-lock-overlay-small">
+                                                                <i class="fas fa-lock"></i>
+                                                            </div>
+                                                        <?php endif; ?>
                                                     </a>
-                                                <?php else: ?>
-                                                    <a href="<?= BASE_URL ?>/notes/edit/<?= $note['id'] ?>" class="text-decoration-none">
-                                                        <?= htmlspecialchars($note['title']) ?>
-                                                    </a>
+                                                </div>
                                                 <?php endif; ?>
-                                            </strong>
+                                                
+                                                <strong>
+                                                    <a href="<?= $noteUrl ?>" class="text-decoration-none">
+                                                        <?= htmlspecialchars($note['title']) ?>
+                                                    </a>
+                                                </strong>
+                                            </div>
                                         </td>
                                         <td class="text-truncate" style="max-width: 250px;">
                                             <?php 
-                                            $content = isset($note['content']) ? $note['content'] : '';
-                                            $preview = strip_tags($content);
-                                            $preview = substr($preview, 0, 100);
-                                            if (strlen($content) > 100) $preview .= '...';
-                                            echo htmlspecialchars($preview);
+                                            if ($isProtected) {
+                                                echo '<span class="text-warning"><i class="fas fa-lock me-1"></i>Protected content</span>';
+                                            } else {
+                                                $content = isset($note['content']) ? $note['content'] : '';
+                                                $preview = strip_tags($content);
+                                                $preview = substr($preview, 0, 100);
+                                                if (strlen($content) > 100) $preview .= '...';
+                                                echo htmlspecialchars($preview);
+                                            }
                                             ?>
                                         </td>
                                         <td>
@@ -341,7 +405,7 @@
                                                 <button class="btn btn-outline-primary pin-note" data-id="<?= $note['id'] ?>" title="<?= isset($note['is_pinned']) && $note['is_pinned'] ? 'Unpin' : 'Pin' ?>">
                                                     <i class="fas fa-thumbtack <?= isset($note['is_pinned']) && $note['is_pinned'] ? 'text-primary' : '' ?>"></i>
                                                 </button>
-                                                <a href="<?= BASE_URL ?>/notes/edit/<?= $note['id'] ?>" class="btn btn-outline-secondary" title="Edit">
+                                                <a href="<?= $noteUrl ?>" class="btn btn-outline-secondary" title="Edit">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
                                                 <a href="<?= BASE_URL ?>/notes/share/<?= $note['id'] ?>" class="btn btn-outline-info" title="Share">
@@ -362,6 +426,74 @@
         <?php endif; ?>
     </div>
 </div>
+
+<!-- Add styles for thumbnails and protected content -->
+<style>
+/* Note thumbnail styling */
+.note-thumbnail-container {
+    height: 180px;
+    overflow: hidden;
+    position: relative;
+}
+
+.note-thumbnail {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.note-thumbnail-container:hover .note-thumbnail {
+    transform: scale(1.05);
+}
+
+/* List view thumbnail */
+.list-view-thumbnail {
+    position: relative;
+    width: 50px;
+    height: 50px;
+    overflow: hidden;
+}
+
+.list-view-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Password protection styling */
+.image-lock-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.image-lock-overlay-small {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.8rem;
+}
+
+.protected-content {
+    background-color: rgba(255, 193, 7, 0.1);
+    border-radius: 5px;
+}
+</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -433,6 +565,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (data.success) {
                         // Refresh the page to reflect changes
                         window.location.reload();
+                    } else if (data.redirect) {
+                        // Redirect to password verification if needed
+                        window.location.href = data.redirect;
+                    } else {
+                        console.error('Error:', data.message);
                     }
                 })
                 .catch(error => console.error('Error:', error));

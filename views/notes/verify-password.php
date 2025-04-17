@@ -25,6 +25,18 @@
                         echo $updated->format('M j, Y g:i A');
                         ?>
                     </div>
+                    
+                    <?php 
+                    // Show some note details to help user identify the note
+                    if (isset($data['note']['image_count']) && $data['note']['image_count'] > 0) {
+                        echo '<div class="mt-2"><i class="fas fa-image me-1"></i> ' . $data['note']['image_count'] . ' image(s) attached</div>';
+                    }
+                    
+                    // Show if note is shared
+                    if (isset($data['note']['is_shared']) && $data['note']['is_shared']) {
+                        echo '<div class="mt-1"><i class="fas fa-share-alt me-1"></i> Shared with others</div>';
+                    }
+                    ?>
                 </div>
                 
                 <div class="alert alert-info">
@@ -54,6 +66,13 @@
                         <a href="<?= BASE_URL ?>/notes" class="btn btn-link">Cancel and go back</a>
                     </div>
                 </form>
+                
+                <div class="text-center mt-4">
+                    <small class="text-muted">
+                        <i class="fas fa-shield-alt me-1"></i>
+                        The contents of this note are encrypted for your security
+                    </small>
+                </div>
             </div>
         </div>
     </div>
@@ -73,5 +92,23 @@
             form.classList.add('was-validated');
         }, false);
     });
+    
+    // Auto-focus on password field
+    window.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('password').focus();
+    });
 })();
 </script>
+
+<style>
+/* Add animation to the lock icon */
+.display-6 .fas.fa-lock {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+</style>

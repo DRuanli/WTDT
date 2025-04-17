@@ -14,8 +14,6 @@ class NoteController {
         $this->sharedNote = new SharedNote();
     }
     
-    // Display all notes (dashboard)
-    // Display all notes (dashboard)
     public function index() {
         // Get user ID from session
         $user_id = Session::getUserId();
@@ -39,6 +37,14 @@ class NoteController {
         
         // Get user's notes
         $notes = $this->note->getUserNotes($user_id, $label_filter, $search);
+        
+        // For each note, add the first image if available
+        foreach ($notes as &$note) {
+            // If the note has images, get the first one
+            if (isset($note['image_count']) && $note['image_count'] > 0) {
+                $note['images'] = $this->note->getNoteImages($note['id']);
+            }
+        }
         
         // Get shared notes with user
         $shared_notes = $this->sharedNote->getNotesSharedWithUser($user_id);
@@ -625,7 +631,7 @@ class NoteController {
         include VIEWS_PATH . '/notes/verify-password.php';
         include VIEWS_PATH . '/components/footer.php';
     }
-    
+
     // Share a note with other users
     public function share($id) {
         $user_id = Session::getUserId();
