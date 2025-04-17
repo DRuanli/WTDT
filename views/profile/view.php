@@ -1,3 +1,6 @@
+<?php
+// This file replaces views/profile/view.php
+?>
 <div class="container py-4">
     <div class="row">
         <div class="col-lg-10 mx-auto">
@@ -191,67 +194,156 @@
     </div>
 </div>
 
-<!-- Global CSS for Profile Pages -->
+<!-- Enhanced CSS for Profile Pages -->
 <style>
-/* Profile Page Styles */
+:root {
+    --primary-color: #4a89dc;
+    --primary-hover: #3a77c5;
+    --secondary-color: #6c757d;
+    --light-bg: #f8f9fa;
+    --border-radius: 12px;
+    --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    --transition: all 0.3s ease;
+}
+
+/* Profile Navigation */
+.profile-nav {
+    background-color: white;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+.profile-nav .nav-tabs {
+    border: none;
+    padding: 0;
+}
+
 .profile-nav .nav-link {
-    border-radius: 0;
-    padding: 1rem;
-    font-weight: 500;
-    color: #6c757d;
-    transition: all 0.2s ease;
+    border: none;
+    padding: 1.25rem 1rem;
+    font-weight: 600;
+    color: var(--secondary-color);
+    transition: var(--transition);
+    position: relative;
+}
+
+.profile-nav .nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 3px;
+    background-color: var(--primary-color);
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
+    opacity: 0;
+}
+
+.profile-nav .nav-link.active::after {
+    width: 80%;
+    opacity: 1;
 }
 
 .profile-nav .nav-link.active {
-    color: #4a89dc;
-    border-bottom: 2px solid #4a89dc;
+    color: var(--primary-color);
     background-color: rgba(74, 137, 220, 0.05);
 }
 
 .profile-nav .nav-link:hover:not(.active) {
-    background-color: rgba(0, 0, 0, 0.03);
+    background-color: rgba(0, 0, 0, 0.02);
+    color: #495057;
 }
 
+.profile-nav .nav-link i {
+    transition: transform 0.3s ease;
+}
+
+.profile-nav .nav-link:hover i {
+    transform: translateY(-2px);
+}
+
+/* Profile Cards */
 .profile-card {
     border: none;
-    border-radius: 10px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--box-shadow);
+    transition: var(--transition);
+    margin-bottom: 25px;
+    background-color: white;
 }
 
 .profile-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
 }
 
+.profile-card .card-header {
+    background-color: white;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 20px;
+}
+
+.profile-card .card-body {
+    padding: 25px;
+}
+
+/* Avatar Styling */
 .avatar-container {
     position: relative;
+    margin: 0 auto 25px;
 }
 
 .profile-avatar, .avatar-placeholder {
-    width: 130px;
-    height: 130px;
+    width: 150px;
+    height: 150px;
     object-fit: cover;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border: 3px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border: 5px solid white;
+    transition: var(--transition);
 }
 
+.avatar-placeholder {
+    background-color: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar-container:hover .profile-avatar, 
+.avatar-container:hover .avatar-placeholder {
+    transform: scale(1.05);
+}
+
+/* Information List */
 .info-list {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 1.25rem;
 }
 
 .info-item {
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
+    transition: var(--transition);
+}
+
+.info-item:hover {
+    background-color: rgba(0, 0, 0, 0.01);
+    transform: translateX(5px);
+    padding-left: 10px;
+    border-left: 3px solid var(--primary-color);
 }
 
 .info-label {
-    flex: 0 0 150px;
+    flex: 0 0 180px;
     font-weight: 600;
-    color: #495057;
+    color: #343a40;
 }
 
 .info-value {
@@ -259,32 +351,62 @@
     color: #212529;
 }
 
+/* Stats Cards with Animations */
+.stats-card {
+    margin-top: 25px;
+}
+
 .stat-box {
     display: flex;
     align-items: center;
-    background-color: #f8f9fa;
-    border-radius: 10px;
-    padding: 1.25rem;
+    background-color: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
     height: 100%;
-    transition: all 0.2s ease;
+    transition: var(--transition);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.stat-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--primary-color);
+    opacity: 0;
+    z-index: -1;
+    transition: var(--transition);
 }
 
 .stat-box:hover {
-    background-color: #fff;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    transform: translateY(-3px);
+    transform: translateY(-7px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.stat-box:hover::before {
+    opacity: 0.05;
 }
 
 .stat-icon {
-    font-size: 2.5rem;
-    width: 60px;
-    height: 60px;
+    font-size: 2.25rem;
+    width: 70px;
+    height: 70px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
-    margin-right: 1rem;
-    color: #fff;
+    border-radius: 20px;
+    margin-right: 1.25rem;
+    color: white;
+    transition: var(--transition);
+}
+
+.stat-box:hover .stat-icon {
+    transform: scale(1.1) rotate(5deg);
 }
 
 .stat-details {
@@ -292,91 +414,95 @@
 }
 
 .stat-value {
-    font-size: 1.75rem;
+    font-size: 2rem;
     font-weight: 700;
     line-height: 1;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(45deg, var(--primary-color), #6ea8fe);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    transition: var(--transition);
+}
+
+.stat-box:hover .stat-value {
+    transform: scale(1.05);
 }
 
 .stat-label {
     font-size: 0.875rem;
-    color: #6c757d;
+    color: var(--secondary-color);
+    font-weight: 500;
 }
 
-/* Individual stat styling */
+/* Individual stat styling with gradients */
 .col:nth-child(1) .stat-icon {
-    background-color: rgba(74, 137, 220, 0.15);
-    color: #4a89dc;
+    background: linear-gradient(135deg, #4a89dc, #5a9cef);
 }
 
 .col:nth-child(2) .stat-icon {
-    background-color: rgba(40, 167, 69, 0.15);
-    color: #28a745;
+    background: linear-gradient(135deg, #28a745, #34ce57);
 }
 
 .col:nth-child(3) .stat-icon {
-    background-color: rgba(23, 162, 184, 0.15);
-    color: #17a2b8;
+    background: linear-gradient(135deg, #17a2b8, #1fc8e3);
 }
 
 .col:nth-child(4) .stat-icon {
-    background-color: rgba(255, 193, 7, 0.15);
-    color: #ffc107;
+    background: linear-gradient(135deg, #ffc107, #ffce3a);
+}
+
+/* Status Badges */
+.badge {
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
 }
 
 /* Responsive adjustments */
 @media (max-width: 767.98px) {
+    .profile-nav .nav-link {
+        padding: 1rem 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .profile-nav .nav-link i {
+        display: block;
+        margin: 0 auto 5px;
+        font-size: 1.1rem;
+    }
+    
     .info-label {
         flex: 0 0 100%;
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.5rem;
     }
     
     .info-value {
         flex: 0 0 100%;
     }
     
+    .info-item:hover {
+        transform: none;
+        padding-left: 5px;
+    }
+    
     .stat-box {
         flex-direction: column;
         text-align: center;
-        padding: 1rem;
+        padding: 1.25rem 1rem;
     }
     
     .stat-icon {
         margin-right: 0;
-        margin-bottom: 0.75rem;
+        margin-bottom: 1rem;
     }
-}
-
-/* Custom form styling */
-.form-control {
-    border-radius: 0.375rem;
-    padding: 0.625rem 0.75rem;
-    border-color: #ced4da;
-    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-}
-
-.form-control:focus {
-    border-color: #4a89dc;
-    box-shadow: 0 0 0 0.25rem rgba(74, 137, 220, 0.25);
-}
-
-.btn-primary {
-    background-color: #4a89dc;
-    border-color: #4a89dc;
-}
-
-.btn-primary:hover {
-    background-color: #3a77c5;
-    border-color: #3a77c5;
-}
-
-.btn-outline-secondary {
-    color: #6c757d;
-    border-color: #6c757d;
-}
-
-.btn-outline-secondary:hover {
-    background-color: #f8f9fa;
-    color: #495057;
+    
+    .avatar-container {
+        margin-top: 15px;
+    }
+    
+    .profile-card .card-body {
+        padding: 20px 15px;
+    }
 }
 </style>
