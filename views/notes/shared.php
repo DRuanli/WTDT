@@ -112,13 +112,15 @@
                                     <?php endif; ?>
                                 </div>
                                 
-                                <a href="<?= BASE_URL ?>/notes/edit/<?= $note['id'] ?>" class="btn btn-sm btn-primary">
-                                    <?php if (isset($note['can_edit']) && $note['can_edit']): ?>
+                                <?php if (isset($note['can_edit']) && $note['can_edit']): ?>
+                                    <a href="<?= BASE_URL ?>/notes/edit/<?= $note['id'] ?>" class="btn btn-sm btn-primary">
                                         <i class="fas fa-edit me-1"></i> Edit
-                                    <?php else: ?>
+                                    </a>
+                                <?php else: ?>
+                                    <a href="<?= BASE_URL ?>/notes/view/<?= $note['id'] ?>" class="btn btn-sm btn-primary">
                                         <i class="fas fa-eye me-1"></i> View
-                                    <?php endif; ?>
-                                </a>
+                                    </a>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>

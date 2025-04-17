@@ -312,8 +312,9 @@ function initWebsocket() {
     if (!window.ENABLE_WEBSOCKETS) return;
     
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    const wsUrl = `${protocol}//${host}:8080`;
+    const wsPort = 8080; // WebSocket server port
+    const hostName = window.location.hostname;
+    const wsUrl = `${protocol}//${hostName}:${wsPort}`;
     
     noteWebsocket = new WebSocket(wsUrl);
     

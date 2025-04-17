@@ -7,11 +7,14 @@ class NoteController {
     private $note;
     private $label;
     private $sharedNote;
+    private $user;
     
     public function __construct() {
         $this->note = new Note();
         $this->label = new Label();
         $this->sharedNote = new SharedNote();
+        require_once MODELS_PATH . '/User.php';
+        $this->user = new User();
     }
 
     /**
@@ -249,7 +252,7 @@ class NoteController {
         $note = $this->note->getById($id);
         
         // Check if note exists and belongs to the user or is shared with edit permission
-        if (!$note || ($note['user_id'] != $user_id && !$this->sharedNote->canEditSharedNote($id, $user_id))) {
+        if (!$note || ($note['user_id'] != $user_id && !$this->sharedNote->isSharedWithUser($id, $user_id))) {
             Session::setFlash('error', 'Note not found or access denied');
             header('Location: ' . BASE_URL . '/notes');
             exit;
@@ -273,6 +276,15 @@ class NoteController {
         
         // Get note images
         $note['images'] = $this->note->getNoteImages($id);
+        
+        // If note is shared (not owned by current user), add sharing permissions to note data
+        if ($note['user_id'] != $user_id) {
+            $note['can_edit'] = $this->sharedNote->canEditSharedNote($id, $user_id);
+            
+            // Get owner information
+            $owner = $this->user->getUserById($note['user_id']);
+            $note['owner_name'] = $owner ? $owner['display_name'] : 'Unknown User';
+        }
         
         // Set page data
         $data = [
@@ -301,8 +313,8 @@ class NoteController {
         // Get current note
         $note = $this->note->getById($id);
         
-        // Check if note exists and belongs to the user
-        if (!$note || $note['user_id'] != $user_id) {
+        // Check if note exists and belongs to the user OR user has edit permission
+        if (!$note || ($note['user_id'] != $user_id && !$this->sharedNote->canEditSharedNote($id, $user_id))) {
             if ($is_ajax) {
                 header('Content-Type: application/json');
                 echo json_encode([
