@@ -52,10 +52,10 @@
                         <form method="POST" class="share-form">
                             <div class="mb-3">
                                 <label for="recipient_emails" class="form-label">Recipient Email Addresses</label>
-                                <div class="form-text mb-2">Enter one or more email addresses of registered users</div>
+                                <div class="form-text mb-2">Enter one or more email addresses of registered users (one per line or comma-separated)</div>
                                 <textarea class="form-control <?= !empty($data['errors']['recipient_emails']) ? 'is-invalid' : '' ?>" 
-                                          id="recipient_emails" name="recipient_emails[]" rows="3" 
-                                          placeholder="user@example.com&#10;another@example.com"></textarea>
+                                        id="recipient_emails" name="recipient_emails" rows="3" 
+                                        placeholder="user@example.com&#10;another@example.com"></textarea>
                                 <?php if (!empty($data['errors']['recipient_emails'])): ?>
                                     <div class="invalid-feedback"><?= $data['errors']['recipient_emails'] ?></div>
                                 <?php endif; ?>
@@ -152,8 +152,9 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Handle textarea input for emails
     const recipientTextarea = document.getElementById('recipient_emails');
+    const shareForm = document.querySelector('.share-form');
     
-    if (recipientTextarea) {
+    if (recipientTextarea && shareForm) {
         // Format emails when pasting
         recipientTextarea.addEventListener('paste', function(e) {
             // Get pasted data
@@ -175,6 +176,45 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Prevent default paste
             e.preventDefault();
+        });
+        
+        // Process form submission to prepare email addresses
+        shareForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Get and process email addresses
+            let emailText = recipientTextarea.value.trim();
+            
+            // Split by newlines or commas
+            let emails = emailText.split(/[\n,;]+/).map(email => email.trim()).filter(email => email);
+            
+            if (emails.length === 0) {
+                // Show error
+                recipientTextarea.classList.add('is-invalid');
+                if (!recipientTextarea.nextElementSibling || !recipientTextarea.nextElementSibling.classList.contains('invalid-feedback')) {
+                    const errorElement = document.createElement('div');
+                    errorElement.className = 'invalid-feedback';
+                    errorElement.textContent = 'At least one email address is required';
+                    recipientTextarea.parentNode.appendChild(errorElement);
+                }
+                return;
+            }
+            
+            // Clear any existing input elements
+            const existingInputs = shareForm.querySelectorAll('input[name="recipient_emails[]"]');
+            existingInputs.forEach(input => input.remove());
+            
+            // Create hidden input for each email
+            emails.forEach(email => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'recipient_emails[]';
+                input.value = email;
+                shareForm.appendChild(input);
+            });
+            
+            // Submit the form
+            shareForm.submit();
         });
     }
 });

@@ -91,7 +91,8 @@ class SharedNote {
                 
                 return [
                     'success' => true,
-                    'message' => 'Sharing permissions updated successfully'
+                    'message' => 'Sharing permissions updated successfully',
+                    'share_id' => $share_id
                 ];
             } else {
                 return [
@@ -107,6 +108,8 @@ class SharedNote {
         $stmt->bind_param("iiii", $note_id, $owner_id, $recipient_id, $can_edit_int);
         
         if ($stmt->execute()) {
+            $share_id = $stmt->insert_id;
+            
             // Get owner's name
             $stmt = $this->db->prepare("SELECT display_name FROM users WHERE id = ?");
             $stmt->bind_param("i", $owner_id);
@@ -133,7 +136,7 @@ class SharedNote {
             
             return [
                 'success' => true,
-                'share_id' => $stmt->insert_id
+                'share_id' => $share_id
             ];
         }
         
@@ -280,6 +283,17 @@ class SharedNote {
     
     // Check if a user can edit a shared note
     public function canEditSharedNote($note_id, $user_id) {
+        // First check if user is the owner
+        $stmt = $this->db->prepare("SELECT id FROM notes WHERE id = ? AND user_id = ?");
+        $stmt->bind_param("ii", $note_id, $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($result->num_rows > 0) {
+            return true; // User is the owner, can always edit
+        }
+        
+        // Then check if shared with edit permissions
         $stmt = $this->db->prepare("SELECT can_edit FROM shared_notes WHERE note_id = ? AND recipient_id = ?");
         $stmt->bind_param("ii", $note_id, $user_id);
         $stmt->execute();
@@ -291,7 +305,7 @@ class SharedNote {
         }
         
         return false;
-    }
+    }    
 
     // Update sharing permissions
     public function updateSharePermissions($share_id, $owner_id, $can_edit) {
@@ -301,7 +315,7 @@ class SharedNote {
             FROM shared_notes s
             JOIN notes n ON s.note_id = n.id
             JOIN users u ON s.recipient_id = u.id
-            WHERE s.id = ? AND s.owner_id = ?
+            WHERE s.id = ? AND n.user_id = ?
         ");
         $stmt->bind_param("ii", $share_id, $owner_id);
         $stmt->execute();
@@ -337,6 +351,14 @@ class SharedNote {
                 $share['title'],
                 $can_edit ? 'edit' : 'view'
             );
+            
+            // Create notification for recipient
+            $this->createNotification($share['recipient_id'], 'share_permission_changed', [
+                'note_id' => $share['note_id'],
+                'note_title' => $share['title'],
+                'owner_name' => $owner['display_name'],
+                'permission' => $can_edit ? 'edit' : 'view-only'
+            ]);
             
             return [
                 'success' => true,

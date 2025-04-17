@@ -626,8 +626,6 @@ class NoteController {
         include VIEWS_PATH . '/components/footer.php';
     }
     
-    // Note sharing related methods
-    
     // Share a note with other users
     public function share($id) {
         $user_id = Session::getUserId();
@@ -667,8 +665,26 @@ class NoteController {
         ];
         
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $recipient_emails = isset($_POST['recipient_emails']) ? $_POST['recipient_emails'] : [];
             $can_edit = isset($_POST['can_edit']) && $_POST['can_edit'] == '1';
+            
+            // Process recipient emails
+            $recipient_emails = [];
+            
+            // Handle array of emails
+            if (isset($_POST['recipient_emails']) && is_array($_POST['recipient_emails'])) {
+                $recipient_emails = $_POST['recipient_emails'];
+            } 
+            // Handle single string (comma or newline separated)
+            else if (isset($_POST['recipient_emails']) && is_string($_POST['recipient_emails'])) {
+                $email_text = trim($_POST['recipient_emails']);
+                if (!empty($email_text)) {
+                    // Split by newlines, commas, or semicolons
+                    $recipient_emails = preg_split('/[\n,;]+/', $email_text);
+                    // Clean up
+                    $recipient_emails = array_map('trim', $recipient_emails);
+                    $recipient_emails = array_filter($recipient_emails);
+                }
+            }
             
             if (empty($recipient_emails)) {
                 $data['errors']['recipient_emails'] = 'At least one recipient email is required';

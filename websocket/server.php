@@ -281,38 +281,49 @@ class NoteServer implements MessageComponentInterface {
             return;
         }
         
-        // Update note in database
-        $updateSuccess = $this->updateNoteInDatabase($noteId, $title, $content);
-        
-        if ($updateSuccess) {
-            echo "Note {$noteId} updated by user {$userId}\n";
+        // Update note in database if content or title is valid
+        if (!empty($content) || ($title !== null && !empty($title))) {
+            $updateSuccess = $this->updateNoteInDatabase($noteId, $title, $content);
             
-            // Broadcast to all subscribers except sender
-            $this->broadcastToNote($noteId, [
-                'type' => 'note_updated',
-                'note_id' => $noteId,
-                'user_id' => $userId,
-                'user_name' => $this->getUserName($userId),
-                'title' => $title,
-                'content' => $content,
-                'timestamp' => time()
-            ], [$conn]);
-            
-            // Send success response to sender
-            $conn->send(json_encode([
-                'type' => 'update_response',
-                'success' => true,
-                'note_id' => $noteId,
-                'message' => 'Note updated successfully'
-            ]));
+            if ($updateSuccess) {
+                echo "Note {$noteId} updated by user {$userId}\n";
+                
+                // Broadcast to all subscribers except sender
+                $this->broadcastToNote($noteId, [
+                    'type' => 'note_updated',
+                    'note_id' => $noteId,
+                    'user_id' => $userId,
+                    'user_name' => $this->getUserName($userId),
+                    'title' => $title,
+                    'content' => $content,
+                    'timestamp' => time()
+                ], [$conn]);
+                
+                // Send success response to sender
+                $conn->send(json_encode([
+                    'type' => 'update_response',
+                    'success' => true,
+                    'note_id' => $noteId,
+                    'message' => 'Note updated successfully'
+                ]));
+            } else {
+                echo "Note update failed: Database error\n";
+                
+                // Send failure response
+                $conn->send(json_encode([
+                    'type' => 'update_response',
+                    'success' => false,
+                    'message' => 'Failed to update note in database'
+                ]));
+            }
         } else {
-            echo "Note update failed: Database error\n";
+            echo "Note update failed: Empty content or title\n";
             
             // Send failure response
             $conn->send(json_encode([
                 'type' => 'update_response',
                 'success' => false,
-                'message' => 'Failed to update note in database'
+                'message' => 'Content or title cannot be empty'
             ]));
         }
     }
@@ -341,45 +352,56 @@ class NoteServer implements MessageComponentInterface {
     
     // Check if user has access to a note
     protected function checkNoteAccess($userId, $noteId) {
-        // Check if user owns the note
-        $stmt = $this->db->prepare("SELECT id FROM notes WHERE id = ? AND user_id = ?");
-        $stmt->bind_param("ii", $noteId, $userId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        if ($result->num_rows > 0) {
-            return true; // User is the owner
+        try {
+            // Check if user owns the note
+            $stmt = $this->db->prepare("SELECT id FROM notes WHERE id = ? AND user_id = ?");
+            $stmt->bind_param("ii", $noteId, $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if ($result->num_rows > 0) {
+                return true; // User is the owner
+            }
+            
+            // Check if note is shared with user
+            $stmt = $this->db->prepare("SELECT id FROM shared_notes WHERE note_id = ? AND recipient_id = ?");
+            $stmt->bind_param("ii", $noteId, $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            return $result->num_rows > 0; // Note is shared with user
+        } catch (\Exception $e) {
+            echo "Error checking note access: " . $e->getMessage() . "\n";
+            return false;
         }
-        
-        // Check if note is shared with user
-        $stmt = $this->db->prepare("SELECT id FROM shared_notes WHERE note_id = ? AND recipient_id = ?");
-        $stmt->bind_param("ii", $noteId, $userId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        return $result->num_rows > 0; // Note is shared with user
     }
     
     // Check if user has edit access to a note
     protected function checkNoteEditAccess($userId, $noteId) {
-        // Check if user owns the note
-        $stmt = $this->db->prepare("SELECT id FROM notes WHERE id = ? AND user_id = ?");
-        $stmt->bind_param("ii", $noteId, $userId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        if ($result->num_rows > 0) {
-            return true; // User is the owner
+        try {
+            // Check if user owns the note
+            $stmt = $this->db->prepare("SELECT id FROM notes WHERE id = ? AND user_id = ?");
+            $stmt->bind_param("ii", $noteId, $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if ($result->num_rows > 0) {
+                return true; // User is the owner
+            }
+            
+            // Check if note is shared with user and has edit permissions
+            $stmt = $this->db->prepare("SELECT id FROM shared_notes WHERE note_id = ? AND recipient_id = ? AND can_edit = 1");
+            $stmt->bind_param("ii", $noteId, $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            return $result->num_rows > 0; // User has edit permissions
+        } catch (\Exception $e) {
+            echo "Error checking note edit access: " . $e->getMessage() . "\n";
+            return false;
         }
-        
-        // Check if note is shared with user and has edit permissions
-        $stmt = $this->db->prepare("SELECT id FROM shared_notes WHERE note_id = ? AND recipient_id = ? AND can_edit = 1");
-        $stmt->bind_param("ii", $noteId, $userId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        return $result->num_rows > 0; // User has edit permissions
     }
+    
     
     // Update note in database
     protected function updateNoteInDatabase($noteId, $title, $content) {

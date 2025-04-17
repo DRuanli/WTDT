@@ -171,9 +171,36 @@ $can_edit = !$is_shared || (isset($data['note']['can_edit']) && $data['note']['c
                     <?php if ($is_shared && $can_edit): ?>
                     <div class="alert alert-info mt-3">
                         <i class="fas fa-info-circle me-2"></i>
-                        <strong>Real-time Collaboration:</strong> Any changes you make will be visible to other users in real-time. You might also see others' cursors while they edit.
+                        <strong>Real-time Collaboration:</strong> You're now in collaborative editing mode. Any changes you make will be visible to other users in real-time, and you'll see their changes and cursor positions as they edit.
                     </div>
                     <?php endif; ?>
+
+                    <!-- Collaborators panel - Add this section -->
+                    <div id="collaborators-panel" class="position-fixed top-0 end-0 p-3 d-none" style="z-index: 1050; margin-top: 80px;">
+                        <div class="card shadow">
+                            <div class="card-header bg-primary text-white py-2">
+                                <h6 class="m-0"><i class="fas fa-users me-2"></i>Active Collaborators</h6>
+                            </div>
+                            <div class="card-body p-0">
+                                <ul id="collaborators-list" class="list-group list-group-flush"></ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Real-time collaboration notification toast - Add this section -->
+                    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050; margin-bottom: 60px;">
+                        <div id="collaborationToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
+                            <div class="toast-header">
+                                <i class="fas fa-users me-2 text-primary"></i>
+                                <strong class="me-auto">Collaboration</strong>
+                                <small>Just now</small>
+                                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                            </div>
+                            <div class="toast-body" id="collaborationToastBody">
+                                Someone is editing this note.
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </form>
         </div>
@@ -217,6 +244,474 @@ $can_edit = !$is_shared || (isset($data['note']['can_edit']) && $data['note']['c
         </div>
     </div>
 </div>
+
+<!-- Add these styles for remote cursors -->
+<style>
+/* Remote cursor styles */
+.remote-cursor {
+    position: absolute;
+    z-index: 100;
+    pointer-events: none;
+}
+
+.remote-cursor-label {
+    position: absolute;
+    top: -20px;
+    left: 0;
+    background-color: #3498db;
+    color: white;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.remote-cursor-caret {
+    width: 2px;
+    height: 20px;
+    background-color: #3498db;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+/* Collaborators list styles */
+#collaborators-list .user-avatar {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: white;
+    margin-right: 8px;
+}
+</style>
+
+<!-- Now add improved JavaScript for collaboration -->
+<script>
+// Initialize WebSocket connection
+let noteWebsocket;
+let isCollaborationEnabled = <?= ($is_shared && $can_edit) ? 'true' : 'false' ?>;
+let remoteCursors = {};
+let lastCursorPositions = {};
+let currentCollaborators = {};
+let noteId = <?= isset($data['note']['id']) ? $data['note']['id'] : '0' ?>;
+let userId = <?= Session::getUserId() ?>;
+
+// Connect to WebSocket server for collaboration
+if (isCollaborationEnabled || <?= (isset($data['note']['id']) && !$is_shared) ? 'true' : 'false' ?>) {
+    initWebsocket();
+}
+
+function initWebsocket() {
+    if (!window.ENABLE_WEBSOCKETS) return;
+    
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+    const wsUrl = `${protocol}//${host}:8080`;
+    
+    noteWebsocket = new WebSocket(wsUrl);
+    
+    noteWebsocket.onopen = function() {
+        console.log('WebSocket connection established');
+        
+        // Authenticate with the server
+        noteWebsocket.send(JSON.stringify({
+            type: 'auth',
+            user_id: userId,
+            token: 'simple-auth-token' // In a real application, use a secure token
+        }));
+        
+        // Subscribe to this note's updates
+        setTimeout(() => {
+            if (noteId > 0) {
+                noteWebsocket.send(JSON.stringify({
+                    type: 'subscribe',
+                    note_id: noteId
+                }));
+            }
+        }, 500); // Short delay to ensure authentication completes
+    };
+    
+    noteWebsocket.onmessage = function(event) {
+        try {
+            const data = JSON.parse(event.data);
+            
+            switch (data.type) {
+                case 'auth_response':
+                    if (data.success) {
+                        console.log('Authenticated with WebSocket server');
+                    } else {
+                        console.error('Authentication failed:', data.message);
+                    }
+                    break;
+                    
+                case 'note_updated':
+                    if (data.user_id !== userId) {
+                        handleRemoteUpdate(data);
+                    }
+                    break;
+                    
+                case 'cursor_position':
+                    if (data.user_id !== userId) {
+                        updateRemoteCursor(data);
+                    }
+                    break;
+                    
+                case 'user_joined':
+                    if (data.user_id !== userId) {
+                        showCollaborationToast(`${data.user_name} joined the note`);
+                        currentCollaborators[data.user_id] = data.user_name;
+                        updateCollaboratorsList();
+                    }
+                    break;
+                    
+                case 'user_left':
+                    if (data.user_id !== userId) {
+                        showCollaborationToast(`${data.user_name} left the note`);
+                        delete currentCollaborators[data.user_id];
+                        removeRemoteCursor(data.user_id);
+                        updateCollaboratorsList();
+                    }
+                    break;
+                
+                case 'new_shared_notes':
+                    // Handle notification for new shared notes
+                    if (data.notes && data.notes.length > 0) {
+                        showNotification("New shared notes", `You have ${data.notes.length} new shared note(s)`);
+                    }
+                    break;
+            }
+        } catch (error) {
+            console.error('Error processing WebSocket message:', error);
+        }
+    };
+    
+    noteWebsocket.onclose = function() {
+        console.log('WebSocket connection closed');
+        
+        // Attempt to reconnect after 5 seconds
+        setTimeout(initWebsocket, 5000);
+    };
+    
+    noteWebsocket.onerror = function(error) {
+        console.error('WebSocket error:', error);
+    };
+    
+    // Only set up editing events if we're in collaborative mode
+    if (isCollaborationEnabled) {
+        setupCollaborativeEditing();
+    }
+    
+    // Clean up when leaving the page
+    window.addEventListener('beforeunload', function() {
+        if (noteWebsocket && noteWebsocket.readyState === WebSocket.OPEN && noteId > 0) {
+            noteWebsocket.send(JSON.stringify({
+                type: 'unsubscribe',
+                note_id: noteId
+            }));
+        }
+    });
+}
+
+// Set up collaborative editing
+function setupCollaborativeEditing() {
+    const titleInput = document.getElementById('note-title');
+    const contentInput = document.getElementById('note-content');
+    
+    if (!titleInput || !contentInput) return;
+    
+    // Send updates when the content changes
+    let lastUpdateTime = 0;
+    const updateDebounceTime = 500; // 500ms debounce
+    
+    function debounce(func, wait) {
+        let timeout;
+        return function() {
+            const context = this;
+            const args = arguments;
+            const later = function() {
+                timeout = null;
+                func.apply(context, args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+    
+    const sendUpdate = debounce(function() {
+        if (noteWebsocket && noteWebsocket.readyState === WebSocket.OPEN && noteId > 0) {
+            const title = titleInput.value;
+            const content = contentInput.value;
+            
+            noteWebsocket.send(JSON.stringify({
+                type: 'note_update',
+                note_id: noteId,
+                title: title,
+                content: content
+            }));
+            
+            lastUpdateTime = Date.now();
+        }
+    }, updateDebounceTime);
+    
+    // Listen for changes in the editor
+    titleInput.addEventListener('input', sendUpdate);
+    contentInput.addEventListener('input', sendUpdate);
+    
+    // Send cursor position updates
+    contentInput.addEventListener('click', sendCursorPosition);
+    contentInput.addEventListener('keyup', sendCursorPosition);
+    contentInput.addEventListener('select', sendCursorPosition);
+}
+
+// Handle remote updates to the note
+function handleRemoteUpdate(data) {
+    if (!isCollaborationEnabled) return;
+    
+    const titleInput = document.getElementById('note-title');
+    const contentInput = document.getElementById('note-content');
+    
+    if (!titleInput || !contentInput) return;
+    
+    // Don't apply updates if the user is actively typing
+    const isUserActiveInTitle = document.activeElement === titleInput;
+    const isUserActiveInContent = document.activeElement === contentInput;
+    
+    // Update the title if provided and not currently being edited
+    if (data.title && !isUserActiveInTitle) {
+        titleInput.value = data.title;
+    }
+    
+    // Update the content if not currently being edited
+    if (data.content && !isUserActiveInContent) {
+        // Save current scroll position
+        const scrollTop = contentInput.scrollTop;
+        
+        // Update content
+        contentInput.value = data.content;
+        
+        // Restore scroll position
+        contentInput.scrollTop = scrollTop;
+        
+        // Show toast notification
+        showCollaborationToast(`${data.user_name} updated the note`);
+    }
+}
+
+// Send cursor position to server
+function sendCursorPosition() {
+    if (!isCollaborationEnabled || !noteWebsocket) return;
+    
+    const contentInput = document.getElementById('note-content');
+    if (!contentInput) return;
+    
+    const position = contentInput.selectionStart;
+    
+    // Only send if position changed
+    if (lastCursorPositions[userId] !== position) {
+        lastCursorPositions[userId] = position;
+        
+        if (noteWebsocket.readyState === WebSocket.OPEN && noteId > 0) {
+            noteWebsocket.send(JSON.stringify({
+                type: 'cursor_position',
+                note_id: noteId,
+                position: position
+            }));
+        }
+    }
+}
+
+// Update remote cursor position
+function updateRemoteCursor(data) {
+    if (!isCollaborationEnabled) return;
+    
+    const contentInput = document.getElementById('note-content');
+    if (!contentInput) return;
+    
+    const userId = data.user_id;
+    const position = data.position;
+    const userName = data.user_name;
+    
+    // Generate a consistent color for this user
+    const userColor = getColorForUser(userId);
+    
+    // Create or update cursor element
+    let cursor = remoteCursors[userId];
+    if (!cursor) {
+        cursor = document.createElement('div');
+        cursor.className = 'remote-cursor';
+        cursor.innerHTML = `
+            <div class="remote-cursor-label" style="background-color: ${userColor}">${userName}</div>
+            <div class="remote-cursor-caret" style="background-color: ${userColor}"></div>
+        `;
+        document.body.appendChild(cursor);
+        remoteCursors[userId] = cursor;
+    }
+    
+    // Position the cursor at the right location in the textarea
+    const coords = getCaretCoordinates(contentInput, position);
+    const rect = contentInput.getBoundingClientRect();
+    cursor.style.left = (rect.left + coords.left) + 'px';
+    cursor.style.top = (rect.top + coords.top) + 'px';
+    
+    // Remember the position
+    lastCursorPositions[userId] = position;
+    
+    // Add to current collaborators
+    if (!currentCollaborators[userId]) {
+        currentCollaborators[userId] = userName;
+        updateCollaboratorsList();
+    }
+    
+    // Set a timeout to remove cursor after inactivity
+    if (cursor.timeout) clearTimeout(cursor.timeout);
+    cursor.timeout = setTimeout(() => {
+        removeRemoteCursor(userId);
+    }, 10000); // 10 seconds
+}
+
+// Remove a remote cursor
+function removeRemoteCursor(userId) {
+    if (remoteCursors[userId]) {
+        document.body.removeChild(remoteCursors[userId]);
+        delete remoteCursors[userId];
+    }
+}
+
+// Generate a consistent color for a user
+function getColorForUser(userId) {
+    // List of distinctive colors
+    const colors = [
+        '#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', 
+        '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4'
+    ];
+    
+    // Use modulo to ensure we always get a valid index
+    const colorIndex = parseInt(userId, 10) % colors.length;
+    return colors[colorIndex];
+}
+
+// Update the collaborators list panel
+function updateCollaboratorsList() {
+    if (!isCollaborationEnabled) return;
+    
+    const collaboratorsPanel = document.getElementById('collaborators-panel');
+    const collaboratorsList = document.getElementById('collaborators-list');
+    
+    if (!collaboratorsPanel || !collaboratorsList) return;
+    
+    // Show the panel if there are collaborators
+    const collabCount = Object.keys(currentCollaborators).length;
+    if (collabCount > 0) {
+        collaboratorsPanel.classList.remove('d-none');
+        
+        // Update the list
+        collaboratorsList.innerHTML = '';
+        
+        for (const [userId, userName] of Object.entries(currentCollaborators)) {
+            const userColor = getColorForUser(userId);
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex align-items-center py-2';
+            
+            // Get first letter of user's name for avatar
+            const firstLetter = userName.charAt(0).toUpperCase();
+            
+            li.innerHTML = `
+                <div class="user-avatar" style="background-color: ${userColor}">${firstLetter}</div>
+                <span>${userName}</span>
+            `;
+            
+            collaboratorsList.appendChild(li);
+        }
+    } else {
+        collaboratorsPanel.classList.add('d-none');
+    }
+}
+
+// Show toast notification for collaboration events
+function showCollaborationToast(message) {
+    const toast = document.getElementById('collaborationToast');
+    const toastBody = document.getElementById('collaborationToastBody');
+    
+    if (toast && toastBody) {
+        toastBody.textContent = message;
+        
+        // Use Bootstrap's toast API if available, otherwise manually show/hide
+        if (typeof bootstrap !== 'undefined') {
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+        } else {
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+    }
+}
+
+// Show generic notification
+function showNotification(title, message) {
+    if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(title, { body: message });
+    } else if ('Notification' in window && Notification.permission !== 'denied') {
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                new Notification(title, { body: message });
+            }
+        });
+    }
+    
+    // Also show as toast
+    showCollaborationToast(message);
+}
+
+// Utility function to get caret coordinates in a textarea
+function getCaretCoordinates(element, position) {
+    // Create a dummy element to measure text dimensions
+    const div = document.createElement('div');
+    const styles = window.getComputedStyle(element);
+    
+    // Copy styles from textarea
+    div.style.position = 'absolute';
+    div.style.visibility = 'hidden';
+    div.style.whiteSpace = 'pre-wrap';
+    div.style.height = 'auto';
+    div.style.width = element.offsetWidth + 'px';
+    div.style.font = styles.font;
+    div.style.padding = styles.padding;
+    div.style.border = styles.border;
+    div.style.boxSizing = styles.boxSizing;
+    div.style.lineHeight = styles.lineHeight;
+    
+    document.body.appendChild(div);
+    
+    // Set content up to cursor position
+    div.textContent = element.value.substring(0, position);
+    
+    // Add a span to mark cursor position
+    const span = document.createElement('span');
+    span.textContent = '.'; // Just need something to measure
+    div.appendChild(span);
+    
+    // Get position
+    const coordinates = {
+        left: span.offsetLeft,
+        top: span.offsetTop,
+        height: span.offsetHeight
+    };
+    
+    // Clean up
+    document.body.removeChild(div);
+    
+    return coordinates;
+}
+</script>
 
 <style>
 /* Improved dropzone */
