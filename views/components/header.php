@@ -177,182 +177,66 @@ if (Session::isLoggedIn()) {
 </script>
 <body class="d-flex flex-column min-vh-100 bg-light <?= $font_size_class ?> note-color-<?= $note_color ?>" data-bs-theme="<?= $theme ?>">
     <?php if (Session::isLoggedIn()): ?>
-    <header>
-        <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
-            <div class="container">
-                <a class="navbar-brand" href="<?= BASE_URL ?>">
-                    <i class="fas fa-sticky-note me-2"></i><?= APP_NAME ?>
-                </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbarMain">
-                    <ul class="navbar-nav me-auto">
-                        <li class="nav-item">
-                            <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/notes') !== false && !strpos($_SERVER['REQUEST_URI'], '/notes/shared') ? 'active' : '' ?>" href="<?= BASE_URL ?>/notes">
-                                <i class="fas fa-sticky-note me-1"></i> My Notes
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/notes/shared') !== false ? 'active' : '' ?>" href="<?= BASE_URL ?>/notes/shared">
-                                <i class="fas fa-share-alt me-1"></i> Shared Notes
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/labels') !== false ? 'active' : '' ?>" href="<?= BASE_URL ?>/labels">
-                                <i class="fas fa-tags me-1"></i> Labels
-                            </a>
-                        </li>
-                    </ul>
-                    <ul class="navbar-nav">
-                        <!-- Notifications Dropdown -->
-                        <li class="nav-item dropdown">
-                            <a class="nav-link notification-badge" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" <?= $unread_count > 0 ? 'data-count="' . $unread_count . '"' : '' ?>>
-                                <i class="fas fa-bell"></i>
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="notificationsDropdown">
-                                <div class="dropdown-header d-flex justify-content-between align-items-center">
-                                    <span>Notifications</span>
-                                    <?php if ($unread_count > 0): ?>
-                                        <a href="<?= BASE_URL ?>/notifications/mark-all-read" class="btn btn-sm btn-link p-0 text-decoration-none">
-                                            Mark all read
+        <header>
+            <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+                <div class="container">
+                    <a class="navbar-brand" href="<?= BASE_URL ?>">
+                        <i class="fas fa-sticky-note me-2"></i><?= APP_NAME ?>
+                    </a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navbarMain">
+                        <ul class="navbar-nav me-auto">
+                            <li class="nav-item">
+                                <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/notes') !== false && !strpos($_SERVER['REQUEST_URI'], '/notes/shared') ? 'active' : '' ?>" href="<?= BASE_URL ?>/notes">
+                                    <i class="fas fa-sticky-note me-1"></i> My Notes
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/notes/shared') !== false ? 'active' : '' ?>" href="<?= BASE_URL ?>/notes/shared">
+                                    <i class="fas fa-share-alt me-1"></i> Shared Notes
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/labels') !== false ? 'active' : '' ?>" href="<?= BASE_URL ?>/labels">
+                                    <i class="fas fa-tags me-1"></i> Labels
+                                </a>
+                            </li>
+                        </ul>
+                        <ul class="navbar-nav">
+                            <!-- Include the notification dropdown -->
+                            <?php include VIEWS_PATH . '/components/notification-dropdown.php'; ?>
+                            
+                            <!-- User Profile Dropdown -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-user-circle me-1"></i> <?= htmlspecialchars(Session::get('user_display_name')) ?>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="<?= BASE_URL ?>/profile">
+                                            <i class="fas fa-user me-2"></i> My Profile
                                         </a>
-                                    <?php endif; ?>
-                                </div>
-                                
-                                <?php if (empty($unread_notifications)): ?>
-                                    <div class="p-3 text-center text-muted">
-                                        <p class="mb-0">No new notifications</p>
-                                    </div>
-                                <?php else: ?>
-                                    <?php foreach ($unread_notifications as $notification): ?>
-                                        <div class="notification-dropdown-item">
-                                            <?php if ($notification['type'] === 'new_shared_note'): ?>
-                                                <div class="d-flex">
-                                                    <div class="notification-icon share">
-                                                        <i class="fas fa-share-alt"></i>
-                                                    </div>
-                                                    <div class="notification-content">
-                                                        <div class="notification-title">Note Shared With You</div>
-                                                        <div class="notification-message">
-                                                            <strong><?= htmlspecialchars($notification['data']['owner_name']) ?></strong> shared 
-                                                            "<?= htmlspecialchars($notification['data']['note_title']) ?>" with you
-                                                        </div>
-                                                        <div class="notification-time">
-                                                            <?php
-                                                            $created_at = new DateTime($notification['created_at']);
-                                                            $now = new DateTime();
-                                                            $interval = $created_at->diff($now);
-                                                            
-                                                            if ($interval->days == 0) {
-                                                                if ($interval->h == 0) {
-                                                                    if ($interval->i == 0) {
-                                                                        echo 'Just now';
-                                                                    } else {
-                                                                        echo $interval->i . ' min ago';
-                                                                    }
-                                                                } else {
-                                                                    echo $interval->h . ' hours ago';
-                                                                }
-                                                            } elseif ($interval->days == 1) {
-                                                                echo 'Yesterday';
-                                                            } else {
-                                                                echo $created_at->format('M j, Y');
-                                                            }
-                                                            ?>
-                                                        </div>
-                                                        <div class="notification-actions">
-                                                            <a href="<?= BASE_URL ?>/notes/shared" class="btn btn-sm btn-primary">View</a>
-                                                            <a href="<?= BASE_URL ?>/notifications/mark-read/<?= $notification['id'] ?>" class="btn btn-sm btn-link">
-                                                                Dismiss
-                                                            </a>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            <?php elseif ($notification['type'] === 'share_permission_changed'): ?>
-                                                <div class="d-flex">
-                                                    <div class="notification-icon permission">
-                                                        <i class="fas fa-edit"></i>
-                                                    </div>
-                                                    <div class="notification-content">
-                                                        <div class="notification-title">Permissions Updated</div>
-                                                        <div class="notification-message">
-                                                            Your access to "<?= htmlspecialchars($notification['data']['note_title']) ?>" 
-                                                            is now <?= $notification['data']['permission'] ?>
-                                                        </div>
-                                                        <div class="notification-time">
-                                                            <?php
-                                                            $created_at = new DateTime($notification['created_at']);
-                                                            $now = new DateTime();
-                                                            $interval = $created_at->diff($now);
-                                                            
-                                                            if ($interval->days == 0) {
-                                                                if ($interval->h == 0) {
-                                                                    if ($interval->i == 0) {
-                                                                        echo 'Just now';
-                                                                    } else {
-                                                                        echo $interval->i . ' min ago';
-                                                                    }
-                                                                } else {
-                                                                    echo $interval->h . ' hours ago';
-                                                                }
-                                                            } elseif ($interval->days == 1) {
-                                                                echo 'Yesterday';
-                                                            } else {
-                                                                echo $created_at->format('M j, Y');
-                                                            }
-                                                            ?>
-                                                        </div>
-                                                        <div class="notification-actions">
-                                                            <a href="<?= BASE_URL ?>/notes/shared" class="btn btn-sm btn-primary">View</a>
-                                                            <a href="<?= BASE_URL ?>/notifications/mark-read/<?= $notification['id'] ?>" class="btn btn-sm btn-link">
-                                                                Dismiss
-                                                            </a>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            <?php endif; ?>
-                                        </div>
-                                    <?php endforeach; ?>
-                                    
-                                    <div class="p-2 border-top text-center">
-                                        <a href="<?= BASE_URL ?>/notifications" class="btn btn-sm btn-link text-decoration-none">
-                                            View all notifications
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="<?= BASE_URL ?>/profile/preferences">
+                                            <i class="fas fa-cog me-2"></i> Preferences
                                         </a>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                        </li>
-                        
-                        <!-- User Profile Dropdown -->
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-user-circle me-1"></i> <?= htmlspecialchars(Session::get('user_display_name')) ?>
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li>
-                                    <a class="dropdown-item" href="<?= BASE_URL ?>/profile">
-                                        <i class="fas fa-user me-2"></i> My Profile
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="<?= BASE_URL ?>/profile/preferences">
-                                        <i class="fas fa-cog me-2"></i> Preferences
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item" href="<?= BASE_URL ?>/logout">
-                                        <i class="fas fa-sign-out-alt me-2"></i> Logout
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                    </ul>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="<?= BASE_URL ?>/logout">
+                                            <i class="fas fa-sign-out-alt me-2"></i> Logout
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
-            </div>
-        </nav>
-    </header>
+            </nav>
+        </header>
     <?php endif; ?>
     
     <?php 

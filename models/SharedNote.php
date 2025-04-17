@@ -167,17 +167,10 @@ class SharedNote {
         return $shares;
     }
 
-    private function createNotification($user_id, $type, $data) {
-        // Check if notifications table exists, create if not
-        $this->ensureNotificationsTable();
-        
-        // Serialize data
-        $serialized_data = json_encode($data);
-        
-        // Insert notification
-        $stmt = $this->db->prepare("INSERT INTO notifications (user_id, type, data, is_read, created_at) VALUES (?, ?, ?, 0, NOW())");
-        $stmt->bind_param("iss", $user_id, $type, $serialized_data);
-        return $stmt->execute();
+    private function createNotification($user_id, $type, $data, $entity_id = null) {
+        require_once MODELS_PATH . '/Notification.php';
+        $notification = new Notification();
+        return $notification->create($user_id, $type, $data, $entity_id);
     }
 
     private function ensureNotificationsTable() {
@@ -309,66 +302,89 @@ class SharedNote {
 
     // Update sharing permissions
     public function updateSharePermissions($share_id, $owner_id, $can_edit) {
-        // First check if the share exists and user is the owner
-        $stmt = $this->db->prepare("
-            SELECT s.note_id, s.recipient_id, n.title, u.email, u.display_name 
-            FROM shared_notes s
-            JOIN notes n ON s.note_id = n.id
-            JOIN users u ON s.recipient_id = u.id
-            WHERE s.id = ? AND n.user_id = ?
-        ");
-        $stmt->bind_param("ii", $share_id, $owner_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        if ($result->num_rows === 0) {
-            return [
-                'success' => false,
-                'message' => 'Share not found or you are not the owner'
-            ];
-        }
-        
-        $share = $result->fetch_assoc();
-        $can_edit_int = $can_edit ? 1 : 0;
-        
-        // Update the permissions
-        $stmt = $this->db->prepare("UPDATE shared_notes SET can_edit = ? WHERE id = ?");
-        $stmt->bind_param("ii", $can_edit_int, $share_id);
-        
-        if ($stmt->execute()) {
-            // Get owner information for notification
-            $stmt = $this->db->prepare("SELECT display_name FROM users WHERE id = ?");
-            $stmt->bind_param("i", $owner_id);
+        try {
+            // First check if the share exists and user is the owner
+            $stmt = $this->db->prepare("
+                SELECT s.note_id, s.recipient_id, n.title, u.email, u.display_name 
+                FROM shared_notes s
+                JOIN notes n ON s.note_id = n.id
+                JOIN users u ON s.recipient_id = u.id
+                WHERE s.id = ? AND n.user_id = ?
+            ");
+            $stmt->bind_param("ii", $share_id, $owner_id);
             $stmt->execute();
             $result = $stmt->get_result();
-            $owner = $result->fetch_assoc();
             
-            // Send email notification about permission change
-            sendSharePermissionChangedEmail(
-                $share['email'],
-                $share['display_name'],
-                $owner['display_name'],
-                $share['title'],
-                $can_edit ? 'edit' : 'view'
-            );
+            if ($result->num_rows === 0) {
+                return [
+                    'success' => false,
+                    'message' => 'Share not found or you are not the owner'
+                ];
+            }
             
-            // Create notification for recipient
-            $this->createNotification($share['recipient_id'], 'share_permission_changed', [
-                'note_id' => $share['note_id'],
-                'note_title' => $share['title'],
-                'owner_name' => $owner['display_name'],
-                'permission' => $can_edit ? 'edit' : 'view-only'
-            ]);
+            $share = $result->fetch_assoc();
+            $can_edit_int = $can_edit ? 1 : 0;
+            
+            // Check current permission to avoid creating unnecessary notifications
+            $checkStmt = $this->db->prepare("SELECT can_edit FROM shared_notes WHERE id = ?");
+            $checkStmt->bind_param("i", $share_id);
+            $checkStmt->execute();
+            $checkResult = $checkStmt->get_result();
+            $currentSetting = $checkResult->fetch_assoc();
+            
+            // Only update if permission is actually changing
+            if ((int)$currentSetting['can_edit'] !== $can_edit_int) {
+                // Update the permissions
+                $stmt = $this->db->prepare("UPDATE shared_notes SET can_edit = ? WHERE id = ?");
+                $stmt->bind_param("ii", $can_edit_int, $share_id);
+                
+                if ($stmt->execute()) {
+                    // Get owner information for notification
+                    $stmt = $this->db->prepare("SELECT display_name FROM users WHERE id = ?");
+                    $stmt->bind_param("i", $owner_id);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    $owner = $result->fetch_assoc();
+                    
+                    // Send email notification about permission change
+                    sendSharePermissionChangedEmail(
+                        $share['email'],
+                        $share['display_name'],
+                        $owner['display_name'],
+                        $share['title'],
+                        $can_edit ? 'edit' : 'view'
+                    );
+                    
+                    // Create notification for recipient
+                    $this->createNotification($share['recipient_id'], 'share_permission_changed', [
+                        'note_id' => $share['note_id'],
+                        'note_title' => $share['title'],
+                        'owner_name' => $owner['display_name'],
+                        'permission' => $can_edit ? 'edit' : 'view-only'
+                    ], $share['note_id']);
+                    
+                    return [
+                        'success' => true,
+                        'message' => 'Share permissions updated successfully'
+                    ];
+                }
+            } else {
+                // Permission not changed, but still return success
+                return [
+                    'success' => true,
+                    'message' => 'Share permissions already set to this level'
+                ];
+            }
             
             return [
-                'success' => true,
-                'message' => 'Share permissions updated successfully'
+                'success' => false,
+                'message' => 'Failed to update permissions: ' . $stmt->error
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'An error occurred: ' . $e->getMessage()
             ];
         }
-        
-        return [
-            'success' => false,
-            'message' => 'Failed to update permissions: ' . $stmt->error
-        ];
     }
 }
