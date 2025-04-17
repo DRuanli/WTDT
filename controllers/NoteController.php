@@ -13,6 +13,68 @@ class NoteController {
         $this->label = new Label();
         $this->sharedNote = new SharedNote();
     }
+
+    /**
+     * Display a single note (read-only view)
+     * This method should be added to the NoteController class
+     */
+    public function view($id) {
+        $user_id = Session::getUserId();
+        
+        // Get note
+        $note = $this->note->getById($id);
+        
+        // Check if note exists and belongs to the user or is shared with them
+        if (!$note || ($note['user_id'] != $user_id && !$this->sharedNote->isSharedWithUser($id, $user_id))) {
+            Session::setFlash('error', 'Note not found or access denied');
+            header('Location: ' . BASE_URL . '/notes');
+            exit;
+        }
+        
+        // Check if note is password protected
+        if (isset($note['is_password_protected']) && $note['is_password_protected']) {
+            // Handle password protection - check if already verified this session
+            $verified_notes = Session::get('verified_notes', []);
+            
+            if (!in_array($id, $verified_notes)) {
+                // Redirect to password verification page
+                header('Location: ' . BASE_URL . '/notes/verify-password/' . $id . '?redirect=view');
+                exit;
+            }
+        }
+        
+        // Get note labels
+        $note_labels = $this->note->getNoteLabels($id);
+        $note['labels'] = $note_labels;
+        
+        // Get note images
+        $note['images'] = $this->note->getNoteImages($id);
+        
+        // Determine if the user can edit (owner or has edit permission)
+        $isOwner = $note['user_id'] == $user_id;
+        $can_edit = $isOwner || $this->sharedNote->canEditSharedNote($id, $user_id);
+        
+        // Get owner information if shared
+        if (!$isOwner) {
+            $owner = $this->user->getUserById($note['user_id']);
+            $note['owner_name'] = $owner ? $owner['display_name'] : 'Unknown User';
+        }
+        
+        // Set page data
+        $data = [
+            'pageTitle' => $note['title'],
+            'pageStyles' => ['notes'],
+            'pageScripts' => ['notes'],
+            'note' => $note,
+            'isOwner' => $isOwner,
+            'can_edit' => $can_edit
+        ];
+        
+        // Load view
+        include VIEWS_PATH . '/components/header.php';
+        include VIEWS_PATH . '/notes/view.php';
+        include VIEWS_PATH . '/components/footer.php';
+    }
     
     public function index() {
         // Get user ID from session
