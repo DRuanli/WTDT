@@ -32,7 +32,7 @@ switch ($font_size) {
         break;
 }
 
-// Load notifications if user is logged in
+// Get unread notifications if user is logged in
 $unread_notifications = [];
 $unread_count = 0;
 if (Session::isLoggedIn()) {
@@ -207,66 +207,119 @@ if (Session::isLoggedIn()) {
                     <ul class="navbar-nav">
                         <!-- Notifications Dropdown -->
                         <li class="nav-item dropdown">
-                            <a class="nav-link" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <a class="nav-link notification-badge" href="#" id="notificationsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" <?= $unread_count > 0 ? 'data-count="' . $unread_count . '"' : '' ?>>
                                 <i class="fas fa-bell"></i>
-                                <?php if ($unread_count > 0): ?>
-                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                        <?= $unread_count ?>
-                                        <span class="visually-hidden">unread notifications</span>
-                                    </span>
-                                <?php endif; ?>
                             </a>
-                            <div class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="notificationsDropdown" style="width: 300px; max-height: 400px; overflow-y: auto;">
-                                <div class="p-2 border-bottom d-flex justify-content-between align-items-center">
-                                    <h6 class="dropdown-header m-0 p-0">Notifications</h6>
+                            <div class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="notificationsDropdown">
+                                <div class="dropdown-header d-flex justify-content-between align-items-center">
+                                    <span>Notifications</span>
                                     <?php if ($unread_count > 0): ?>
-                                        <a href="<?= BASE_URL ?>/notifications/mark-all-read" class="btn btn-sm btn-link text-decoration-none">Mark all read</a>
+                                        <a href="<?= BASE_URL ?>/notifications/mark-all-read" class="btn btn-sm btn-link p-0 text-decoration-none">
+                                            Mark all read
+                                        </a>
                                     <?php endif; ?>
                                 </div>
+                                
                                 <?php if (empty($unread_notifications)): ?>
                                     <div class="p-3 text-center text-muted">
                                         <p class="mb-0">No new notifications</p>
                                     </div>
                                 <?php else: ?>
                                     <?php foreach ($unread_notifications as $notification): ?>
-                                        <div class="dropdown-item p-2 border-bottom notification-item">
+                                        <div class="notification-dropdown-item">
                                             <?php if ($notification['type'] === 'new_shared_note'): ?>
                                                 <div class="d-flex">
-                                                    <div class="me-2 text-primary">
+                                                    <div class="notification-icon share">
                                                         <i class="fas fa-share-alt"></i>
                                                     </div>
-                                                    <div>
-                                                        <p class="mb-0"><strong><?= htmlspecialchars($notification['data']['owner_name']) ?></strong> shared a note with you</p>
-                                                        <p class="mb-0 small text-muted">
-                                                            "<?= htmlspecialchars($notification['data']['note_title']) ?>" 
-                                                            (<?= $notification['data']['permission'] ?>)
-                                                        </p>
-                                                        <div class="mt-1">
+                                                    <div class="notification-content">
+                                                        <div class="notification-title">Note Shared With You</div>
+                                                        <div class="notification-message">
+                                                            <strong><?= htmlspecialchars($notification['data']['owner_name']) ?></strong> shared 
+                                                            "<?= htmlspecialchars($notification['data']['note_title']) ?>" with you
+                                                        </div>
+                                                        <div class="notification-time">
+                                                            <?php
+                                                            $created_at = new DateTime($notification['created_at']);
+                                                            $now = new DateTime();
+                                                            $interval = $created_at->diff($now);
+                                                            
+                                                            if ($interval->days == 0) {
+                                                                if ($interval->h == 0) {
+                                                                    if ($interval->i == 0) {
+                                                                        echo 'Just now';
+                                                                    } else {
+                                                                        echo $interval->i . ' min ago';
+                                                                    }
+                                                                } else {
+                                                                    echo $interval->h . ' hours ago';
+                                                                }
+                                                            } elseif ($interval->days == 1) {
+                                                                echo 'Yesterday';
+                                                            } else {
+                                                                echo $created_at->format('M j, Y');
+                                                            }
+                                                            ?>
+                                                        </div>
+                                                        <div class="notification-actions">
                                                             <a href="<?= BASE_URL ?>/notes/shared" class="btn btn-sm btn-primary">View</a>
-                                                            <a href="<?= BASE_URL ?>/notifications/mark-read/<?= $notification['id'] ?>" class="btn btn-sm btn-link">Dismiss</a>
+                                                            <a href="<?= BASE_URL ?>/notifications/mark-read/<?= $notification['id'] ?>" class="btn btn-sm btn-link">
+                                                                Dismiss
+                                                            </a>
                                                         </div>
                                                     </div>
                                                 </div>
                                             <?php elseif ($notification['type'] === 'share_permission_changed'): ?>
                                                 <div class="d-flex">
-                                                    <div class="me-2 text-info">
+                                                    <div class="notification-icon permission">
                                                         <i class="fas fa-edit"></i>
                                                     </div>
-                                                    <div>
-                                                        <p class="mb-0"><strong><?= htmlspecialchars($notification['data']['owner_name']) ?></strong> updated sharing permissions</p>
-                                                        <p class="mb-0 small text-muted">
-                                                            "<?= htmlspecialchars($notification['data']['note_title']) ?>" 
+                                                    <div class="notification-content">
+                                                        <div class="notification-title">Permissions Updated</div>
+                                                        <div class="notification-message">
+                                                            Your access to "<?= htmlspecialchars($notification['data']['note_title']) ?>" 
                                                             is now <?= $notification['data']['permission'] ?>
-                                                        </p>
-                                                        <div class="mt-1">
+                                                        </div>
+                                                        <div class="notification-time">
+                                                            <?php
+                                                            $created_at = new DateTime($notification['created_at']);
+                                                            $now = new DateTime();
+                                                            $interval = $created_at->diff($now);
+                                                            
+                                                            if ($interval->days == 0) {
+                                                                if ($interval->h == 0) {
+                                                                    if ($interval->i == 0) {
+                                                                        echo 'Just now';
+                                                                    } else {
+                                                                        echo $interval->i . ' min ago';
+                                                                    }
+                                                                } else {
+                                                                    echo $interval->h . ' hours ago';
+                                                                }
+                                                            } elseif ($interval->days == 1) {
+                                                                echo 'Yesterday';
+                                                            } else {
+                                                                echo $created_at->format('M j, Y');
+                                                            }
+                                                            ?>
+                                                        </div>
+                                                        <div class="notification-actions">
                                                             <a href="<?= BASE_URL ?>/notes/shared" class="btn btn-sm btn-primary">View</a>
-                                                            <a href="<?= BASE_URL ?>/notifications/mark-read/<?= $notification['id'] ?>" class="btn btn-sm btn-link">Dismiss</a>
+                                                            <a href="<?= BASE_URL ?>/notifications/mark-read/<?= $notification['id'] ?>" class="btn btn-sm btn-link">
+                                                                Dismiss
+                                                            </a>
                                                         </div>
                                                     </div>
                                                 </div>
                                             <?php endif; ?>
                                         </div>
                                     <?php endforeach; ?>
+                                    
+                                    <div class="p-2 border-top text-center">
+                                        <a href="<?= BASE_URL ?>/notifications" class="btn btn-sm btn-link text-decoration-none">
+                                            View all notifications
+                                        </a>
+                                    </div>
                                 <?php endif; ?>
                             </div>
                         </li>

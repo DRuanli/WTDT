@@ -290,6 +290,9 @@ switch ($page) {
             case 'users':
                 include_once 'api/users.php';
                 break;
+            case 'notifications': // Add this new case
+                include_once 'api/notifications.php';
+                break;
             default:
                 echo json_encode(['error' => 'API endpoint not found']);
                 break;
