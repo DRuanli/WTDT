@@ -3,10 +3,12 @@
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-// Check if PHPMailer is available, otherwise use default email functions
-// Check if PHPMailer is available, otherwise use default email functions
 function hasPhpMailer() {
-    return class_exists('PHPMailer\PHPMailer\PHPMailer');
+    $has_class = class_exists('PHPMailer\PHPMailer\PHPMailer');
+    if (defined('MAIL_DEBUG') && MAIL_DEBUG) {
+        error_log('PHPMailer class exists: ' . ($has_class ? 'Yes' : 'No'));
+    }
+    return $has_class;
 }
 
 // Send email with PHPMailer if available
@@ -15,9 +17,18 @@ function sendEmailWithPhpMailer($to, $subject, $message) {
         // Make sure autoloader is included
         if (file_exists(ROOT_PATH . '/vendor/autoload.php')) {
             require_once ROOT_PATH . '/vendor/autoload.php';
+        } else {
+            error_log('Autoloader not found - PHPMailer may not be installed');
+            return false;
         }
         
         $mail = new PHPMailer(true);
+        
+        // Enable debugging if debug mode is on
+        if (defined('MAIL_DEBUG') && MAIL_DEBUG) {
+            $mail->SMTPDebug = 2; // Detailed debug output
+            $mail->Debugoutput = 'error_log'; // Log to PHP error log
+        }
         
         // Server settings
         $mail->isSMTP();
@@ -38,10 +49,23 @@ function sendEmailWithPhpMailer($to, $subject, $message) {
         $mail->Body    = $message;
         $mail->AltBody = strip_tags($message);
         
-        return $mail->send();
+        $result = $mail->send();
+        
+        if (defined('MAIL_DEBUG') && MAIL_DEBUG) {
+            error_log('Email attempt to ' . $to . ': ' . ($result ? 'Success' : 'Failed'));
+        }
+        
+        return $result;
     } catch (Exception $e) {
         // Log error
-        error_log('Mailer Error: ' . $e->getMessage());
+        $error_message = 'Mailer Error: ' . $e->getMessage();
+        error_log($error_message);
+        
+        if (defined('MAIL_DEBUG') && MAIL_DEBUG) {
+            // In debug mode, we should display the error
+            Session::setFlash('error', 'Failed to send email: ' . $error_message);
+        }
+        
         return false;
     }
 }
@@ -302,5 +326,41 @@ function sendEmail($to, $subject, $message) {
     $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
     $headers .= "From: " . MAIL_FROM_NAME . " <" . MAIL_FROM_ADDRESS . ">" . "\r\n";
     
-    return mail($to, $subject, $message, $headers);
+    $result = mail($to, $subject, $message, $headers);
+    
+    if (defined('MAIL_DEBUG') && MAIL_DEBUG) {
+        error_log('Fallback mail() to ' . $to . ': ' . ($result ? 'Success' : 'Failed'));
+        if (!$result) {
+            error_log('Mail error: ' . error_get_last()['message']);
+        }
+    }
+    
+    return $result;
+}
+
+// Add this to the bottom of utils/Mailer.php
+function testEmailConfiguration() {
+    $to = MAIL_USERNAME; // Send to yourself for testing
+    $subject = 'Test Email from ' . APP_NAME;
+    $message = "
+    <html>
+    <body>
+        <h2>Test Email</h2>
+        <p>This is a test email to verify your email configuration is working.</p>
+        <p>Time sent: " . date('Y-m-d H:i:s') . "</p>
+    </body>
+    </html>
+    ";
+    
+    // Try with PHPMailer first
+    if (hasPhpMailer()) {
+        $result = sendEmailWithPhpMailer($to, $subject, $message);
+        error_log('PHPMailer test result: ' . ($result ? 'Success' : 'Failed'));
+        return $result;
+    } else {
+        // Fall back to regular mail function
+        $result = sendEmail($to, $subject, $message);
+        error_log('Regular mail test result: ' . ($result ? 'Success' : 'Failed'));
+        return $result;
+    }
 }

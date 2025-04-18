@@ -148,6 +148,18 @@ switch ($page) {
         header('Service-Worker-Allowed: /');
         readfile(ROOT_PATH . '/service-worker.js');
         break;
+
+    // Add this to your index.php switch statement
+    case 'test-email':
+        if (Session::isLoggedIn() && Session::getUserId() == 1) { // Only admin can test
+            require_once 'utils/Mailer.php';
+            $result = testEmailConfiguration();
+            echo "Email test result: " . ($result ? "Success" : "Failed") . ". Check error logs for details.";
+        } else {
+            header('Location: ' . BASE_URL . '/login');
+        }
+        exit;
+        break;
         
     // Update the notes case in the switch statement in index.php
     case 'notes':
