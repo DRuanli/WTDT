@@ -470,10 +470,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const labelId = document.getElementById('label-id');
     const submitButton = document.getElementById('submit-label');
     const btnText = document.getElementById('btn-text');
-    const cancelButton = document.getElementById('cancel-label');
+    const cancelButton = document.getElementById('cancel-button');
     const formTitle = document.getElementById('form-title');
     const messageContainer = document.getElementById('message-container');
-    const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    const confirmModal = document.getElementById('confirmModal') ? new bootstrap.Modal(document.getElementById('confirmModal')) : null;
     const confirmDeleteBtn = document.getElementById('confirm-delete');
     const labelToDelete = document.getElementById('label-to-delete');
     const createFirstLabel = document.getElementById('create-first-label');
@@ -487,7 +487,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    if (labelForm && labelsList) {
+    // IMPORTANT: Handle form submission regardless of whether labels list exists
+    if (labelForm) {
         // Handle form submission
         labelForm.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -556,7 +557,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 btnText.innerHTML = formAction.value === 'create' ? 'Create Label' : 'Update Label';
             });
         });
-        
+    }
+    
+    // Only attach these event handlers if the labels list exists
+    if (labelsList) {
         // Handle edit buttons
         document.querySelectorAll('.btn-edit').forEach(button => {
             button.addEventListener('click', function() {
@@ -576,7 +580,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     formTitle.textContent = 'Edit Label';
                     btnText.innerHTML = 'Update Label';
                     submitButton.innerHTML = '<i class="fas fa-save me-2"></i> Update Label';
-                    cancelButton.style.display = 'block';
+                    if (cancelButton) {
+                        cancelButton.style.display = 'block';
+                    }
                     
                     // Scroll to form on mobile
                     if (window.innerWidth < 768) {
@@ -596,77 +602,48 @@ document.addEventListener('DOMContentLoaded', function() {
                 const name = this.getAttribute('data-name');
                 
                 // Set the label name in the modal
-                labelToDelete.textContent = name;
+                if (labelToDelete) {
+                    labelToDelete.textContent = name;
+                }
                 currentLabelToDelete = id;
                 
                 // Show the confirmation modal
-                confirmModal.show();
+                if (confirmModal) {
+                    confirmModal.show();
+                } else {
+                    // Fallback if modal not available
+                    if (confirm(`Are you sure you want to delete the label "${name}"?`)) {
+                        deleteLabel(id);
+                    }
+                }
             });
         });
-        
-        // Handle confirm delete
+    }
+    
+    // Handle confirm delete
+    if (confirmDeleteBtn) {
         confirmDeleteBtn.addEventListener('click', function() {
             if (currentLabelToDelete) {
-                // Disable the button
-                confirmDeleteBtn.disabled = true;
-                confirmDeleteBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Deleting...';
-                
-                // Prepare form data
-                const formData = new FormData();
-                formData.append('action', 'delete');
-                formData.append('id', currentLabelToDelete);
-                
-                // Send AJAX request
-                fetch(BASE_URL + '/labels/process', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    // Hide the modal
-                    confirmModal.hide();
-                    
-                    // Reset button
-                    confirmDeleteBtn.disabled = false;
-                    confirmDeleteBtn.innerHTML = '<i class="fas fa-trash me-2"></i> Delete Label';
-                    
-                    if (data.success) {
-                        // Remove the label from the list or refresh
-                        window.location.reload();
-                    } else {
-                        // Show error message
-                        showMessage(data.message || 'Error deleting label', 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showMessage('An error occurred. Please try again.', 'error');
-                    
-                    // Hide the modal
-                    confirmModal.hide();
-                    
-                    // Reset button
-                    confirmDeleteBtn.disabled = false;
-                    confirmDeleteBtn.innerHTML = '<i class="fas fa-trash me-2"></i> Delete Label';
-                });
+                deleteLabel(currentLabelToDelete);
             }
         });
-        
-        // Cancel button
-        if (cancelButton) {
-            cancelButton.addEventListener('click', function(e) {
-                e.preventDefault();
-                resetForm();
-                
-                // Animate back to create mode
+    }
+    
+    // Cancel button
+    if (cancelButton) {
+        cancelButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            resetForm();
+            
+            // Animate back to create mode
+            if (labelForm) {
                 labelForm.classList.remove('edit-mode');
-            });
-        }
-        
-        // Input validation
+            }
+        });
+    }
+    
+    // Input validation
+    if (labelNameInput) {
         labelNameInput.addEventListener('input', function() {
             if (this.value.trim()) {
                 this.classList.remove('is-invalid');
@@ -674,20 +651,85 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Function to delete a label
+    function deleteLabel(labelId) {
+        // Disable the button if it exists
+        if (confirmDeleteBtn) {
+            confirmDeleteBtn.disabled = true;
+            confirmDeleteBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Deleting...';
+        }
+        
+        // Prepare form data
+        const formData = new FormData();
+        formData.append('action', 'delete');
+        formData.append('id', labelId);
+        
+        // Send AJAX request
+        fetch(BASE_URL + '/labels/process', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Hide the modal if it exists
+            if (confirmModal) {
+                confirmModal.hide();
+            }
+            
+            // Reset button if it exists
+            if (confirmDeleteBtn) {
+                confirmDeleteBtn.disabled = false;
+                confirmDeleteBtn.innerHTML = '<i class="fas fa-trash me-2"></i> Delete Label';
+            }
+            
+            if (data.success) {
+                // Remove the label from the list or refresh
+                window.location.reload();
+            } else {
+                // Show error message
+                showMessage(data.message || 'Error deleting label', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showMessage('An error occurred. Please try again.', 'error');
+            
+            // Hide the modal if it exists
+            if (confirmModal) {
+                confirmModal.hide();
+            }
+            
+            // Reset button if it exists
+            if (confirmDeleteBtn) {
+                confirmDeleteBtn.disabled = false;
+                confirmDeleteBtn.innerHTML = '<i class="fas fa-trash me-2"></i> Delete Label';
+            }
+        });
+    }
+    
     // Reset form to create mode
     function resetForm() {
+        if (!labelNameInput || !formAction || !labelId || !formTitle || !btnText || !submitButton) return;
+        
         labelNameInput.value = '';
         formAction.value = 'create';
         labelId.value = '';
         formTitle.textContent = 'Create New Label';
         btnText.innerHTML = 'Create Label';
         submitButton.innerHTML = '<i class="fas fa-save me-2"></i> Create Label';
-        cancelButton.style.display = 'none';
+        if (cancelButton) {
+            cancelButton.style.display = 'none';
+        }
         labelNameInput.classList.remove('is-invalid');
     }
     
     // Show message
     function showMessage(message, type) {
+        if (!messageContainer) return;
+        
         messageContainer.innerHTML = `
             <div class="alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show" role="alert">
                 ${message}
@@ -699,8 +741,12 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(function() {
             const alert = messageContainer.querySelector('.alert');
             if (alert) {
-                const bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
+                try {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                } catch (e) {
+                    alert.remove();
+                }
             }
         }, 5000);
     }
