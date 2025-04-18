@@ -80,8 +80,24 @@ if (Session::isLoggedIn()) {
         <link rel="apple-touch-icon" href="<?= ASSETS_URL ?>/img/icon-192x192.png">
     <?php endif; ?>
     
-    <!-- Custom preferences styles -->
+    <!-- Enhanced styles for header -->
     <style>
+        :root {
+            --primary-color: #4a89dc;
+            --primary-hover: #3a77c5;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --light-bg: #f8f9fa;
+            --border-radius: 12px;
+            --button-radius: 10px;
+            --small-radius: 8px;
+            --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s ease;
+        }
+        
         /* Font size preferences */
         .font-size-small {
             font-size: 0.875rem !important;
@@ -92,7 +108,6 @@ if (Session::isLoggedIn()) {
         .font-size-large {
             font-size: 1.125rem !important;
         }
-        
         
         /* Note color preferences */
         .note-color-white .note-card,
@@ -157,6 +172,283 @@ if (Session::isLoggedIn()) {
         [data-bs-theme="dark"] .note-color-pink .card-body {
             background-color: #2e1923 !important;
         }
+        
+        /* Enhanced Navigation Bar */
+        .navbar {
+            padding: 1rem 0;
+            transition: var(--transition);
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .navbar-dark {
+            background: linear-gradient(to right,rgb(64, 120, 193), #5a9de9) !important;
+        }
+        
+        .navbar-brand {
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+        }
+        
+        .navbar-brand:hover {
+            transform: translateY(-2px);
+        }
+        
+        .navbar-brand i {
+            font-size: 1.25rem;
+            margin-right: 0.5rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .navbar-brand:hover i {
+            transform: rotate(-10deg);
+        }
+        
+        .nav-item {
+            margin: 0 2px;
+            position: relative;
+        }
+        
+        .nav-link {
+            border-radius: var(--small-radius);
+            padding: 0.6rem 1rem;
+            font-weight: 500;
+            position: relative;
+            transition: var(--transition);
+        }
+        
+        .navbar-dark .navbar-nav .nav-link {
+            color: rgba(255, 255, 255, 0.85);
+        }
+        
+        .navbar-dark .navbar-nav .nav-link:hover {
+            color: white;
+        }
+        
+        .navbar-dark .navbar-nav .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: white;
+            font-weight: 600;
+        }
+        
+        .nav-link:hover {
+            transform: translateY(-2px);
+        }
+        
+        .nav-link.active {
+            position: relative;
+        }
+        
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            height: 3px;
+            width: 30px;
+            background-color: white;
+            border-radius: 3px;
+        }
+        
+        .nav-link i {
+            margin-right: 5px;
+            transition: transform 0.3s ease;
+        }
+        
+        .nav-item:hover .nav-link i {
+            transform: translateY(-2px);
+        }
+        
+        /* Dropdown Styling */
+        .dropdown-menu {
+            border: none;
+            border-radius: var(--small-radius);
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.1);
+            padding: 0.75rem 0;
+            min-width: 14rem;
+            animation: dropdownFadeIn 0.3s ease;
+        }
+        
+        @keyframes dropdownFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .dropdown-item {
+            padding: 0.6rem 1.25rem;
+            font-weight: 500;
+            transition: var(--transition);
+            position: relative;
+        }
+        
+        .dropdown-item:hover {
+            background-color: rgba(74, 137, 220, 0.1);
+            color: var(--primary-color);
+            padding-left: 1.5rem;
+        }
+        
+        .dropdown-item:active, .dropdown-item:focus {
+            background-color: rgba(74, 137, 220, 0.2);
+            color: var(--primary-color);
+        }
+        
+        .dropdown-item i {
+            width: 1.25rem;
+            margin-right: 0.5rem;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .dropdown-item:hover i {
+            transform: translateX(3px);
+        }
+        
+        .dropdown-divider {
+            margin: 0.5rem 0;
+            opacity: 0.1;
+        }
+        
+        /* Notification Badge */
+        .position-relative .badge {
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(220, 53, 69, 0.3);
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        
+        /* Notification Dropdown */
+        .notification-list {
+            max-height: 350px;
+            overflow-y: auto;
+        }
+        
+        .notification-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .notification-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        .notification-list::-webkit-scrollbar-thumb {
+            background: #c1d1f0;
+            border-radius: 10px;
+        }
+        
+        .notification-list::-webkit-scrollbar-thumb:hover {
+            background: #a5bae6;
+        }
+        
+        .dropdown-header {
+            font-weight: 600;
+            color: var(--primary-color);
+            padding: 0.5rem 1rem;
+        }
+        
+        /* User Avatar */
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-right: 0.5rem;
+        }
+        
+        .nav-link .user-display-name {
+            max-width: 120px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* Account Verification Alert */
+        .alert-warning {
+            background: linear-gradient(45deg, #ffc107, #ffdb7e);
+            border: none;
+            color: rgba(0, 0, 0, 0.7);
+            font-weight: 500;
+        }
+        
+        .alert-warning .btn-link {
+            font-weight: 600;
+            color: rgba(0, 0, 0, 0.8);
+            text-decoration: underline;
+        }
+        
+        /* Mobile Navigation */
+        .navbar-toggler {
+            border: none;
+            padding: 0.5rem;
+            border-radius: var(--small-radius);
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+        
+        .navbar-toggler:focus {
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.25);
+        }
+        
+        .navbar-toggler-icon {
+            transition: transform 0.3s ease;
+        }
+        
+        .navbar-toggler:hover .navbar-toggler-icon {
+            transform: rotate(90deg);
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 991px) {
+            .navbar-collapse {
+                background-color: var(--primary-color);
+                border-radius: var(--border-radius);
+                padding: 1rem;
+                margin-top: 1rem;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            }
+            
+            .nav-link:hover {
+                transform: translateX(5px);
+            }
+            
+            .dropdown-menu {
+                background-color: rgba(255, 255, 255, 0.1);
+                box-shadow: none;
+            }
+            
+            .dropdown-item {
+                color: white;
+            }
+            
+            .dropdown-item:hover {
+                background-color: rgba(255, 255, 255, 0.2);
+                color: white;
+            }
+            
+            .dropdown-divider {
+                border-color: rgba(255, 255, 255, 0.1);
+            }
+        }
     </style>
 </head>
 <script>
@@ -178,29 +470,29 @@ if (Session::isLoggedIn()) {
 <body class="d-flex flex-column min-vh-100 bg-light <?= $font_size_class ?> note-color-<?= $note_color ?>" data-bs-theme="<?= $theme ?>">
     <?php if (Session::isLoggedIn()): ?>
         <header>
-            <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+            <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm sticky-top">
                 <div class="container">
                     <a class="navbar-brand" href="<?= BASE_URL ?>">
-                        <i class="fas fa-sticky-note me-2"></i><?= APP_NAME ?>
+                        <i class="fas fa-sticky-note"></i><?= APP_NAME ?>
                     </a>
-                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
                         <span class="navbar-toggler-icon"></span>
                     </button>
                     <div class="collapse navbar-collapse" id="navbarMain">
                         <ul class="navbar-nav me-auto">
                             <li class="nav-item">
                                 <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/notes') !== false && !strpos($_SERVER['REQUEST_URI'], '/notes/shared') ? 'active' : '' ?>" href="<?= BASE_URL ?>/notes">
-                                    <i class="fas fa-sticky-note me-1"></i> My Notes
+                                    <i class="fas fa-sticky-note"></i> My Notes
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/notes/shared') !== false ? 'active' : '' ?>" href="<?= BASE_URL ?>/notes/shared">
-                                    <i class="fas fa-share-alt me-1"></i> Shared Notes
+                                    <i class="fas fa-share-alt"></i> Shared Notes
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link <?= strpos($_SERVER['REQUEST_URI'], '/labels') !== false ? 'active' : '' ?>" href="<?= BASE_URL ?>/labels">
-                                    <i class="fas fa-tags me-1"></i> Labels
+                                    <i class="fas fa-tags"></i> Labels
                                 </a>
                             </li>
                         </ul>
@@ -210,24 +502,43 @@ if (Session::isLoggedIn()) {
                             
                             <!-- User Profile Dropdown -->
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                                    <i class="fas fa-user-circle me-1"></i> <?= htmlspecialchars(Session::get('user_display_name')) ?>
+                                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <?php
+                                    // Get user info
+                                    $userObj = (new User())->getUserById(Session::getUserId());
+                                    $hasAvatar = !empty($userObj['avatar_path']);
+                                    ?>
+                                    
+                                    <?php if ($hasAvatar): ?>
+                                        <img src="<?= BASE_URL ?>/uploads/avatars/<?= $userObj['avatar_path'] ?>?v=<?= time() ?>" alt="Avatar" class="user-avatar">
+                                    <?php else: ?>
+                                        <div class="user-avatar d-flex align-items-center justify-content-center bg-light text-primary">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                    <?php endif; ?>
+                                    
+                                    <span class="user-display-name"><?= htmlspecialchars(Session::get('user_display_name')) ?></span>
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li>
                                         <a class="dropdown-item" href="<?= BASE_URL ?>/profile">
-                                            <i class="fas fa-user me-2"></i> My Profile
+                                            <i class="fas fa-user-circle"></i> My Profile
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="<?= BASE_URL ?>/profile/edit">
+                                            <i class="fas fa-edit"></i> Edit Profile
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item" href="<?= BASE_URL ?>/profile/preferences">
-                                            <i class="fas fa-cog me-2"></i> Preferences
+                                            <i class="fas fa-cog"></i> Preferences
                                         </a>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
-                                        <a class="dropdown-item" href="<?= BASE_URL ?>/logout">
-                                            <i class="fas fa-sign-out-alt me-2"></i> Logout
+                                        <a class="dropdown-item text-danger" href="<?= BASE_URL ?>/logout">
+                                            <i class="fas fa-sign-out-alt"></i> Logout
                                         </a>
                                     </li>
                                 </ul>
@@ -245,12 +556,15 @@ if (Session::isLoggedIn()) {
         $user = (new User())->getUserById(Session::getUserId());
         if ($user && !$user['is_activated']):
     ?>
-    <div class="alert alert-warning text-center mb-0 rounded-0">
-        Your account is not verified. Please check your email to complete the activation process.
-        <form action="<?= BASE_URL ?>/resend-activation" method="POST" class="d-inline">
-            <input type="hidden" name="resend" value="1">
-            <button type="submit" class="btn btn-link alert-link p-0 d-inline">Resend activation email</button>
-        </form>
+    <div class="alert alert-warning text-center mb-0 rounded-0 border-0 py-3">
+        <div class="container d-flex align-items-center justify-content-center">
+            <i class="fas fa-exclamation-circle me-2 fa-lg"></i>
+            <span>Your account is not verified. Please check your email to complete the activation process.</span>
+            <form action="<?= BASE_URL ?>/resend-activation" method="POST" class="d-inline ms-2">
+                <input type="hidden" name="resend" value="1">
+                <button type="submit" class="btn btn-link alert-link p-0 d-inline">Resend activation email</button>
+            </form>
+        </div>
     </div>
     <?php 
         endif;
