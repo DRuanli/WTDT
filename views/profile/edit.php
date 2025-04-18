@@ -1,5 +1,5 @@
 <?php
-// views/profile/edit.php - Updated with improved avatar functionality and UI alignment
+// views/profile/edit.php
 ?>
 <div class="container py-4">
     <div class="row">
