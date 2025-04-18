@@ -102,8 +102,7 @@ class NoteController {
         
         // Get user's notes
         $notes = $this->note->getUserNotes($user_id, $label_filter, $search);
-        
-        // For each note, add the first image if available
+
         foreach ($notes as &$note) {
             // If the note has images, get the first one
             if (isset($note['image_count']) && $note['image_count'] > 0) {
