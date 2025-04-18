@@ -275,46 +275,36 @@ class ProfileController {
         $user_id = Session::getUserId();
         
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // Create uploads directory if it doesn't exist
-            $avatars_dir = ROOT_PATH . '/uploads/avatars';
-            if (!file_exists($avatars_dir)) {
-                mkdir($avatars_dir, 0755, true);
-            }
-
-            // Create parent directory first if it doesn't exist
-            if (!file_exists(ROOT_PATH . '/uploads')) {
-                if (!mkdir(ROOT_PATH . '/uploads', 0755, true)) {
-                    Session::setFlash('error', 'Failed to create uploads directory');
-                    header('Location: ' . BASE_URL . '/profile/edit');
-                    exit;
-                }
+            // Define the main uploads directory path
+            $uploads_dir = ROOT_PATH . '/uploads';
+            $avatars_dir = $uploads_dir . '/avatars';
+            
+            // Create directory structure if needed
+            if (!file_exists($uploads_dir)) {
+                @mkdir($uploads_dir, 0755, true);
             }
             
-            // Then create avatars directory
             if (!file_exists($avatars_dir)) {
-                if (!mkdir($avatars_dir, 0755, true)) {
-                    Session::setFlash('error', 'Failed to create avatars directory');
-                    header('Location: ' . BASE_URL . '/profile/edit');
-                    exit;
-                }
+                @mkdir($avatars_dir, 0755, true);
             }
             
-            // Ensure directory is writable
-            // In uploadAvatar() method
-            if (!is_writable($avatars_dir)) {
-                // Try to force permissions
-                chmod($avatars_dir, 0777); // More permissive for testing
+            // Verify directory is writable and use fallback if needed
+            $avatars_dir_is_writable = is_writable($avatars_dir);
+            if (!$avatars_dir_is_writable) {
+                // Try to set permissions
+                @chmod($avatars_dir, 0755);
+                $avatars_dir_is_writable = is_writable($avatars_dir);
                 
-                if (!is_writable($avatars_dir)) {
-                    // Try to create a temporary directory instead
+                // If still not writable, use system temp directory as fallback
+                if (!$avatars_dir_is_writable) {
                     $temp_dir = sys_get_temp_dir() . '/note_avatars';
                     if (!file_exists($temp_dir)) {
-                        mkdir($temp_dir, 0777, true);
+                        @mkdir($temp_dir, 0777, true);
                     }
                     $avatars_dir = $temp_dir;
+                    $avatars_dir_is_writable = is_writable($avatars_dir);
                     
-                    // Still not writable?
-                    if (!is_writable($avatars_dir)) {
+                    if (!$avatars_dir_is_writable) {
                         Session::setFlash('error', 'Cannot find a writable directory for uploads');
                         header('Location: ' . BASE_URL . '/profile/edit');
                         exit;
@@ -324,19 +314,22 @@ class ProfileController {
             
             // Handle avatar upload
             if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
-                $allowed_types = ['image/jpeg', 'image/jpg', 'image/png'];
-                $max_size = 2 * 1024 * 1024; // 2MB
-                
                 $file = $_FILES['avatar'];
+                $tmp_name = $file['tmp_name'];
                 
-                // Validate file type
-                if (!in_array($file['type'], $allowed_types)) {
+                // Verify file type using multiple methods
+                $finfo = new finfo(FILEINFO_MIME_TYPE);
+                $mime_type = $finfo->file($tmp_name);
+                $allowed_types = ['image/jpeg', 'image/jpg', 'image/png'];
+                
+                if (!in_array($mime_type, $allowed_types)) {
                     Session::setFlash('error', 'Invalid file type. Only JPEG and PNG are allowed.');
                     header('Location: ' . BASE_URL . '/profile/edit');
                     exit;
                 }
                 
                 // Validate file size
+                $max_size = 2 * 1024 * 1024; // 2MB
                 if ($file['size'] > $max_size) {
                     Session::setFlash('error', 'File is too large. Maximum size is 2MB.');
                     header('Location: ' . BASE_URL . '/profile/edit');
@@ -344,19 +337,35 @@ class ProfileController {
                 }
                 
                 // Generate unique filename
-                $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+                $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                if (!in_array($extension, ['jpg', 'jpeg', 'png'])) {
+                    $extension = ($mime_type === 'image/png') ? 'png' : 'jpg';
+                }
+                
                 $new_filename = 'avatar_' . $user_id . '_' . uniqid() . '.' . $extension;
                 $destination = $avatars_dir . '/' . $new_filename;
                 
+                // Get user data before updating
+                $user = $this->user->getUserById($user_id);
+                $old_avatar_path = null;
+                
+                if ($user && !empty($user['avatar_path'])) {
+                    // Try both possible locations for the old avatar
+                    $old_avatar_main = $uploads_dir . '/avatars/' . $user['avatar_path'];
+                    $old_avatar_temp = sys_get_temp_dir() . '/note_avatars/' . $user['avatar_path'];
+                    
+                    if (file_exists($old_avatar_main)) {
+                        $old_avatar_path = $old_avatar_main;
+                    } elseif (file_exists($old_avatar_temp)) {
+                        $old_avatar_path = $old_avatar_temp;
+                    }
+                }
+                
                 // Move uploaded file
-                if (move_uploaded_file($file['tmp_name'], $destination)) {
-                    // Get current avatar to delete
-                    $user = $this->user->getUserById($user_id);
-                    if ($user && !empty($user['avatar_path'])) {
-                        $old_avatar = $avatars_dir . '/' . $user['avatar_path'];
-                        if (file_exists($old_avatar)) {
-                            unlink($old_avatar);
-                        }
+                if (move_uploaded_file($tmp_name, $destination)) {
+                    // Delete old avatar if it exists
+                    if ($old_avatar_path && file_exists($old_avatar_path)) {
+                        @unlink($old_avatar_path);
                     }
                     
                     // Update database
@@ -368,15 +377,20 @@ class ProfileController {
                         Session::setFlash('error', $result['message']);
                     }
                 } else {
-                    Session::setFlash('error', 'Failed to upload avatar');
+                    Session::setFlash('error', 'Failed to upload avatar. Please try again.');
                 }
             } else if (isset($_POST['remove_avatar']) && $_POST['remove_avatar'] === '1') {
-                // Remove avatar
+                // Remove avatar - check both possible locations
                 $user = $this->user->getUserById($user_id);
                 if ($user && !empty($user['avatar_path'])) {
-                    $avatar_path = $avatars_dir . '/' . $user['avatar_path'];
-                    if (file_exists($avatar_path)) {
-                        unlink($avatar_path);
+                    $main_path = $uploads_dir . '/avatars/' . $user['avatar_path'];
+                    $temp_path = sys_get_temp_dir() . '/note_avatars/' . $user['avatar_path'];
+                    
+                    if (file_exists($main_path)) {
+                        @unlink($main_path);
+                    }
+                    if (file_exists($temp_path)) {
+                        @unlink($temp_path);
                     }
                 }
                 
@@ -389,7 +403,7 @@ class ProfileController {
                     Session::setFlash('error', $result['message']);
                 }
             } else if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] !== UPLOAD_ERR_OK && $_FILES['avatar']['error'] !== UPLOAD_ERR_NO_FILE) {
-                // Handle upload errors
+                // Handle upload errors with detailed message
                 $error_message = $this->getFileUploadErrorMessage($_FILES['avatar']['error']);
                 Session::setFlash('error', 'Avatar upload failed: ' . $error_message);
             }
