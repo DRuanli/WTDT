@@ -102,7 +102,7 @@ class User {
     
     // Get user by ID
     public function getUserById($id) {
-        $stmt = $this->db->prepare("SELECT id, email, display_name, is_activated, created_at FROM users WHERE id = ?");
+        $stmt = $this->db->prepare("SELECT id, email, display_name, is_activated, avatar_path, created_at FROM users WHERE id = ?");
         $stmt->bind_param("i", $id);
         $stmt->execute();
         $result = $stmt->get_result();

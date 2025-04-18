@@ -38,9 +38,9 @@
                             
                             <div class="avatar-container mb-3">
                                 <?php if (isset($data['user']['avatar_path']) && !empty($data['user']['avatar_path'])): ?>
-                                    <img src="<?= BASE_URL ?>/uploads/avatars/<?= $data['user']['avatar_path'] ?>" 
-                                         alt="Avatar" class="img-fluid rounded-circle" 
-                                         style="width: 150px; height: 150px; object-fit: cover;">
+                                    <img src="<?= BASE_URL ?>/uploads/avatars/<?= $data['user']['avatar_path'] ?>?v=<?= time() ?>" 
+                                        alt="Avatar" class="img-fluid rounded-circle" 
+                                        style="width: 150px; height: 150px; object-fit: cover;">
                                 <?php else: ?>
                                     <div class="avatar-placeholder rounded-circle mx-auto d-flex align-items-center justify-content-center bg-light" 
                                          style="width: 150px; height: 150px;">

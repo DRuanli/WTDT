@@ -47,9 +47,9 @@
                         <div class="card-body text-center">
                             <div class="avatar-container mb-3">
                                 <?php if (!empty($data['user']['avatar_path'])): ?>
-                                    <img src="<?= BASE_URL ?>/uploads/avatars/<?= $data['user']['avatar_path'] ?>" 
-                                         alt="Profile Picture" 
-                                         class="rounded-circle profile-avatar">
+                                    <img src="<?= BASE_URL ?>/uploads/avatars/<?= $data['user']['avatar_path'] ?>?v=<?= time() ?>" 
+                                        alt="Avatar" class="img-fluid rounded-circle" 
+                                        style="width: 150px; height: 150px; object-fit: cover;">
                                 <?php else: ?>
                                     <div class="avatar-placeholder rounded-circle d-flex align-items-center justify-content-center bg-light mx-auto">
                                         <i class="fas fa-user fa-4x text-secondary"></i>
