@@ -1,34 +1,27 @@
 <?php
+require_once 'utils/Session.php';
+require_once 'utils/Validator.php';
+require_once 'utils/Security.php';
+require_once 'utils/Mailer.php';  // Make sure this is included
+
+// Check and load Composer's autoloader if available
+if (file_exists(ROOT_PATH . '/vendor/autoload.php')) {
+    require_once ROOT_PATH . '/vendor/autoload.php';
+}
+
 // Always declare the namespace aliases at the file level
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
+// Check if PHPMailer is available, otherwise use default email functions
 function hasPhpMailer() {
-    $has_class = class_exists('PHPMailer\PHPMailer\PHPMailer');
-    if (defined('MAIL_DEBUG') && MAIL_DEBUG) {
-        error_log('PHPMailer class exists: ' . ($has_class ? 'Yes' : 'No'));
-    }
-    return $has_class;
+    return class_exists('PHPMailer\PHPMailer\PHPMailer');
 }
 
 // Send email with PHPMailer if available
 function sendEmailWithPhpMailer($to, $subject, $message) {
     try {
-        // Make sure autoloader is included
-        if (file_exists(ROOT_PATH . '/vendor/autoload.php')) {
-            require_once ROOT_PATH . '/vendor/autoload.php';
-        } else {
-            error_log('Autoloader not found - PHPMailer may not be installed');
-            return false;
-        }
-        
         $mail = new PHPMailer(true);
-        
-        // Enable debugging if debug mode is on
-        if (defined('MAIL_DEBUG') && MAIL_DEBUG) {
-            $mail->SMTPDebug = 2; // Detailed debug output
-            $mail->Debugoutput = 'error_log'; // Log to PHP error log
-        }
         
         // Server settings
         $mail->isSMTP();
@@ -49,23 +42,10 @@ function sendEmailWithPhpMailer($to, $subject, $message) {
         $mail->Body    = $message;
         $mail->AltBody = strip_tags($message);
         
-        $result = $mail->send();
-        
-        if (defined('MAIL_DEBUG') && MAIL_DEBUG) {
-            error_log('Email attempt to ' . $to . ': ' . ($result ? 'Success' : 'Failed'));
-        }
-        
-        return $result;
+        return $mail->send();
     } catch (Exception $e) {
         // Log error
-        $error_message = 'Mailer Error: ' . $e->getMessage();
-        error_log($error_message);
-        
-        if (defined('MAIL_DEBUG') && MAIL_DEBUG) {
-            // In debug mode, we should display the error
-            Session::setFlash('error', 'Failed to send email: ' . $error_message);
-        }
-        
+        error_log('Mailer Error: ' . $mail->ErrorInfo);
         return false;
     }
 }
@@ -199,6 +179,8 @@ function sendOTPEmail($user_email, $user_name, $otp) {
     }
 }
 
+// Add these functions to utils/Mailer.php
+
 // Send email notification for shared note
 function sendNoteSharedEmail($recipient_email, $recipient_name, $owner_name, $note_title, $permission_type) {
     $subject = "Note Shared With You - " . APP_NAME;
@@ -283,84 +265,11 @@ function sendSharePermissionChangedEmail($recipient_email, $recipient_name, $own
     }
 }
 
-// Send notification when sharing is removed
-function sendShareRemovedEmail($recipient_email, $recipient_name, $owner_name, $note_title) {
-    $subject = "Note Access Removed - " . APP_NAME;
-    
-    $message = "
-    <html>
-    <head>
-        <title>Note Access Removed</title>
-        <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .footer { margin-top: 30px; font-size: 12px; color: #777; }
-        </style>
-    </head>
-    <body>
-        <div class='container'>
-            <h2>Note Access Removed</h2>
-            <p>Hello " . htmlspecialchars($recipient_name) . ",</p>
-            <p><strong>" . htmlspecialchars($owner_name) . "</strong> has removed your access to the following note:</p>
-            <p style='font-size: 18px; padding: 10px; background-color: #f8f9fa; border-left: 4px solid #dc3545;'>\"" . htmlspecialchars($note_title) . "\"</p>
-            <p>You no longer have access to view or edit this note.</p>
-            <div class='footer'>
-                <p>Best regards,<br>The " . APP_NAME . " Team</p>
-            </div>
-        </div>
-    </body>
-    </html>
-    ";
-    
-    // Use PHPMailer if available, otherwise use default function
-    if (hasPhpMailer()) {
-        return sendEmailWithPhpMailer($recipient_email, $subject, $message);
-    } else {
-        return sendEmail($recipient_email, $subject, $message);
-    }
-}
-
 // Helper function to use plain PHP mail function when PHPMailer is not available
 function sendEmail($to, $subject, $message) {
     $headers = "MIME-Version: 1.0" . "\r\n";
     $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
     $headers .= "From: " . MAIL_FROM_NAME . " <" . MAIL_FROM_ADDRESS . ">" . "\r\n";
     
-    $result = mail($to, $subject, $message, $headers);
-    
-    if (defined('MAIL_DEBUG') && MAIL_DEBUG) {
-        error_log('Fallback mail() to ' . $to . ': ' . ($result ? 'Success' : 'Failed'));
-        if (!$result) {
-            error_log('Mail error: ' . error_get_last()['message']);
-        }
-    }
-    
-    return $result;
-}
-
-// Add this to the bottom of utils/Mailer.php
-function testEmailConfiguration() {
-    $to = MAIL_USERNAME; // Send to yourself for testing
-    $subject = 'Test Email from ' . APP_NAME;
-    $message = "
-    <html>
-    <body>
-        <h2>Test Email</h2>
-        <p>This is a test email to verify your email configuration is working.</p>
-        <p>Time sent: " . date('Y-m-d H:i:s') . "</p>
-    </body>
-    </html>
-    ";
-    
-    // Try with PHPMailer first
-    if (hasPhpMailer()) {
-        $result = sendEmailWithPhpMailer($to, $subject, $message);
-        error_log('PHPMailer test result: ' . ($result ? 'Success' : 'Failed'));
-        return $result;
-    } else {
-        // Fall back to regular mail function
-        $result = sendEmail($to, $subject, $message);
-        error_log('Regular mail test result: ' . ($result ? 'Success' : 'Failed'));
-        return $result;
-    }
+    return mail($to, $subject, $message, $headers);
 }
