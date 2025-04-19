@@ -102,13 +102,30 @@ class NoteController {
         
         // Get user's notes
         $notes = $this->note->getUserNotes($user_id, $label_filter, $search);
-
+    
+        // Deduplicate notes by ID
+        $uniqueNotes = [];
+        $seenIds = [];
+        
+        foreach ($notes as $note) {
+            if (!in_array($note['id'], $seenIds)) {
+                $seenIds[] = $note['id'];
+                $uniqueNotes[] = $note;
+            }
+        }
+        
+        // Replace with deduplicated notes
+        $notes = $uniqueNotes;
+        
+        // Add images to notes
         foreach ($notes as &$note) {
             // If the note has images, get the first one
             if (isset($note['image_count']) && $note['image_count'] > 0) {
                 $note['images'] = $this->note->getNoteImages($note['id']);
             }
         }
+        // Important: unset reference to prevent accidental modification
+        unset($note);
         
         // Get shared notes with user
         $shared_notes = $this->sharedNote->getNotesSharedWithUser($user_id);
@@ -116,7 +133,7 @@ class NoteController {
         // Get all labels for the user
         $labels = $this->label->getUserLabels($user_id);
         
-        // Set page data
+        // Set page data with all required keys
         $data = [
             'pageTitle' => 'My Notes',
             'pageStyles' => ['notes'],
