@@ -8,8 +8,7 @@ class Note {
     
     // Get all notes for a user
     public function getUserNotes($user_id, $label_id = null, $search = '') {
-        // Base query
-        $query = "SELECT DISTINCT n.* FROM notes n WHERE n.user_id = ?";
+        $query = "SELECT DISTINCT n.id, n.* FROM notes n WHERE n.user_id = ?";
         $params = [$user_id];
         $types = "i";
         

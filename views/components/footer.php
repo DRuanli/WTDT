@@ -16,7 +16,7 @@
                             </div>
                             
                             <div class="d-flex gap-3 social-links">
-                                <a href="#" class="social-link" title="GitHub">
+                                <a href="https://github.com/DRuanli" class="social-link" title="GitHub">
                                     <i class="fab fa-github"></i>
                                 </a>
                                 <a href="#" class="social-link" title="Twitter">

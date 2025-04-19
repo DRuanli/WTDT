@@ -151,6 +151,39 @@ class AuthController {
         // Load view
         include VIEWS_PATH . '/auth/register.php';
     }
+
+    // Resend activation email
+    public function resendActivation() {
+        // Check if user is logged in
+        if (!Session::isLoggedIn()) {
+            header('Location: ' . BASE_URL . '/login');
+            exit;
+        }
+        
+        $user_id = Session::getUserId();
+        $email = Session::get('user_email');
+        
+        // Regenerate activation token
+        $result = $this->user->regenerateActivationToken($email);
+        
+        if ($result['success']) {
+            // Send activation email
+            $send_result = sendActivationEmail($email, $result['display_name'], $result['activation_token']);
+            
+            // Set flash message
+            Session::setFlash('success', 'Activation email has been resent. Please check your inbox.');
+        } else {
+            Session::setFlash('error', $result['message']);
+        }
+        
+        // Redirect back to previous page or home
+        if (isset($_SERVER['HTTP_REFERER'])) {
+            header('Location: ' . $_SERVER['HTTP_REFERER']);
+        } else {
+            header('Location: ' . BASE_URL);
+        }
+        exit;
+    }
     
     // Process account activation
     public function activate() {

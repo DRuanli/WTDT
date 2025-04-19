@@ -1026,7 +1026,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Pin/unpin note functionality with animation
+    // Modified pin/unpin note functionality without animations
     const pinButtons = document.querySelectorAll('.pin-note');
     
     if (pinButtons.length > 0) {
@@ -1036,10 +1036,41 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 const noteId = this.getAttribute('data-id');
                 const icon = this.querySelector('i');
+                const noteCard = this.closest('.note-card') || this.closest('.note-list-item');
                 
-                // Add loading animation
-                icon.classList.remove('fa-thumbtack');
-                icon.classList.add('fa-spinner', 'fa-spin');
+                // Update button appearance immediately (optimistic UI)
+                const isPinned = icon.classList.contains('text-primary');
+                
+                // Update icon state without animation
+                if (isPinned) {
+                    icon.classList.remove('text-primary');
+                } else {
+                    icon.classList.add('text-primary');
+                }
+                
+                // Update button text if it exists
+                const buttonText = this.textContent.trim();
+                if (buttonText) {
+                    this.innerHTML = `<i class="fas fa-thumbtack ${!isPinned ? 'text-primary' : ''}"></i> ${isPinned ? 'Pin' : 'Unpin'}`;
+                }
+                
+                // Update note card styling for grid view
+                if (noteCard && noteCard.classList.contains('note-card')) {
+                    if (isPinned) {
+                        noteCard.classList.remove('pinned');
+                    } else {
+                        noteCard.classList.add('pinned');
+                    }
+                }
+                
+                // Update row styling for list view
+                if (noteCard && noteCard.classList.contains('note-list-item')) {
+                    if (isPinned) {
+                        noteCard.classList.remove('table-pinned');
+                    } else {
+                        noteCard.classList.add('table-pinned');
+                    }
+                }
                 
                 // Send AJAX request
                 fetch(BASE_URL + '/notes/toggle-pin/' + noteId, {
@@ -1050,60 +1081,65 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
                 .then(response => response.json())
                 .then(data => {
-                    if (data.success) {
-                        // Show temporary success indicator
-                        icon.classList.remove('fa-spinner', 'fa-spin');
-                        
-                        if (data.is_pinned) {
-                            icon.classList.add('fa-thumbtack', 'text-primary');
-                            icon.classList.remove('text-muted');
-                            
-                            // Show success effect
-                            const successEffect = document.createElement('div');
-                            successEffect.className = 'pin-success-effect';
-                            this.appendChild(successEffect);
-                            
-                            setTimeout(() => {
-                                this.removeChild(successEffect);
-                                // Refresh to update UI
-                                window.location.reload();
-                            }, 700);
+                    if (!data.success) {
+                        if (data.redirect) {
+                            // Redirect to password verification if needed
+                            window.location.href = data.redirect;
                         } else {
-                            icon.classList.add('fa-thumbtack');
-                            icon.classList.remove('text-primary');
+                            // Revert changes if request failed
+                            if (isPinned) {
+                                icon.classList.add('text-primary');
+                            } else {
+                                icon.classList.remove('text-primary');
+                            }
                             
-                            // Wait for animation
-                            setTimeout(() => {
-                                window.location.reload();
-                            }, 300);
+                            // Revert note card/row styling
+                            if (noteCard && noteCard.classList.contains('note-card')) {
+                                if (isPinned) {
+                                    noteCard.classList.add('pinned');
+                                } else {
+                                    noteCard.classList.remove('pinned');
+                                }
+                            }
+                            
+                            if (noteCard && noteCard.classList.contains('note-list-item')) {
+                                if (isPinned) {
+                                    noteCard.classList.add('table-pinned');
+                                } else {
+                                    noteCard.classList.remove('table-pinned');
+                                }
+                            }
+                            
+                            console.error('Error:', data.message);
                         }
-                    } else if (data.redirect) {
-                        // Redirect to password verification if needed
-                        window.location.href = data.redirect;
-                    } else {
-                        // Show error animation
-                        icon.classList.remove('fa-spinner', 'fa-spin');
-                        icon.classList.add('fa-exclamation-circle', 'text-danger');
-                        
-                        setTimeout(() => {
-                            icon.classList.remove('fa-exclamation-circle', 'text-danger');
-                            icon.classList.add('fa-thumbtack');
-                        }, 1000);
-                        
-                        console.error('Error:', data.message);
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
                     
-                    // Show error animation
-                    icon.classList.remove('fa-spinner', 'fa-spin');
-                    icon.classList.add('fa-exclamation-circle', 'text-danger');
+                    // Revert changes if request failed
+                    if (isPinned) {
+                        icon.classList.add('text-primary');
+                    } else {
+                        icon.classList.remove('text-primary');
+                    }
                     
-                    setTimeout(() => {
-                        icon.classList.remove('fa-exclamation-circle', 'text-danger');
-                        icon.classList.add('fa-thumbtack');
-                    }, 1000);
+                    // Revert note card/row styling
+                    if (noteCard && noteCard.classList.contains('note-card')) {
+                        if (isPinned) {
+                            noteCard.classList.add('pinned');
+                        } else {
+                            noteCard.classList.remove('pinned');
+                        }
+                    }
+                    
+                    if (noteCard && noteCard.classList.contains('note-list-item')) {
+                        if (isPinned) {
+                            noteCard.classList.add('table-pinned');
+                        } else {
+                            noteCard.classList.remove('table-pinned');
+                        }
+                    }
                 });
             });
         });
@@ -1241,20 +1277,6 @@ document.addEventListener('DOMContentLoaded', function() {
         .delete-dialog.loading {
             pointer-events: none;
             opacity: 0.7;
-        }
-        
-        .pin-success-effect {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background-color: rgba(74, 137, 220, 0.3);
-            animation: pin-success 0.6s ease-out;
-        }
-        
-        @keyframes pin-success {
-            0% { transform: scale(1); opacity: 1; }
-            100% { transform: scale(3); opacity: 0; }
         }
     `;
     document.head.appendChild(styleSheet);
