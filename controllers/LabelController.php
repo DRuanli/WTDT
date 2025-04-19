@@ -15,10 +15,26 @@ class LabelController {
         // Get all labels for the user
         $labels = $this->label->getUserLabels($user_id);
         
+        // Deduplicate labels by ID (preventive measure)
+        $uniqueLabels = [];
+        $seenIds = [];
+        
+        foreach ($labels as $label) {
+            if (!in_array($label['id'], $seenIds)) {
+                $seenIds[] = $label['id'];
+                $uniqueLabels[] = $label;
+            }
+        }
+        
+        // Replace with deduplicated labels
+        $labels = $uniqueLabels;
+        
         // Count notes for each label
         foreach ($labels as &$label) {
             $label['note_count'] = $this->label->getNoteCount($label['id']);
         }
+        // Important: unset reference to prevent accidental modification
+        unset($label);
         
         // Set page data
         $data = [

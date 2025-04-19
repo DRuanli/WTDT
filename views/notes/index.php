@@ -413,20 +413,27 @@
                                                 </small>
                                             </td>
                                             <td>
-                                                <div class="note-actions">
-                                                    <button class="btn btn-action pin-note" data-id="<?= $note['id'] ?>" title="<?= isset($note['is_pinned']) && $note['is_pinned'] ? 'Unpin' : 'Pin' ?>">
-                                                        <i class="fas fa-thumbtack <?= isset($note['is_pinned']) && $note['is_pinned'] ? 'text-primary' : '' ?>"></i>
-                                                    </button>
-                                                    <a href="<?= $noteUrl ?>" class="btn btn-action" title="Edit">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
-                                                    <a href="<?= BASE_URL ?>/notes/share/<?= $note['id'] ?>" class="btn btn-action" title="Share">
-                                                        <i class="fas fa-share-alt"></i>
-                                                    </a>
-                                                    <a href="<?= BASE_URL ?>/notes/delete/<?= $note['id'] ?>" class="btn btn-action delete-note" title="Delete">
-                                                        <i class="fas fa-trash"></i>
-                                                    </a>
-                                                </div>
+                                            <div class="note-actions">
+                                                <button class="btn btn-action pin-note" data-id="<?= $note['id'] ?>" title="<?= isset($note['is_pinned']) && $note['is_pinned'] ? 'Unpin' : 'Pin' ?>">
+                                                    <i class="fas fa-thumbtack <?= isset($note['is_pinned']) && $note['is_pinned'] ? 'text-primary' : '' ?>"></i>
+                                                </button>
+                                                
+                                                <a href="<?= $noteUrl ?>" class="btn btn-action" title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                
+                                                <a href="<?= BASE_URL ?>/notes/share/<?= $note['id'] ?>" class="btn btn-action" title="Share">
+                                                    <i class="fas fa-share-alt"></i>
+                                                </a>
+                                                
+                                                <a href="<?= BASE_URL ?>/notes/toggle-password/<?= $note['id'] ?>" class="btn btn-action" title="<?= $isProtected ? 'Remove Password' : 'Add Password' ?>">
+                                                    <i class="fas fa-<?= $isProtected ? 'unlock' : 'lock' ?>"></i>
+                                                </a>
+                                                
+                                                <a href="<?= BASE_URL ?>/notes/delete/<?= $note['id'] ?>" class="btn btn-action delete-note" title="Delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </div>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
