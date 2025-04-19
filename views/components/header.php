@@ -560,7 +560,7 @@ if (Session::isLoggedIn()) {
         <div class="container d-flex align-items-center justify-content-center">
             <i class="fas fa-exclamation-circle me-2 fa-lg"></i>
             <span>Your account is not verified. Please check your email to complete the activation process.</span>
-            <form action="<?= BASE_URL ?>/resend-activation" method="POST" class="d-inline ms-2">
+            <form action="<?= BASE_URL ?>/activate" method="POST" class="d-inline ms-2">
                 <input type="hidden" name="resend" value="1">
                 <button type="submit" class="btn btn-link alert-link p-0 d-inline">Resend activation email</button>
             </form>
