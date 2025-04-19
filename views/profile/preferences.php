@@ -72,40 +72,46 @@ $current_note_color = $data['preferences']['note_color'] ?? 'white';
                                 <div class="mb-4">
                                     <label class="form-label fw-bold">Theme</label>
                                     <div class="row row-cols-1 row-cols-md-2 g-3">
+                                        <!-- Light Theme Option -->
                                         <div class="col">
-                                            <div class="form-check card">
-                                                <div class="card-body">
-                                                    <input class="form-check-input" type="radio" name="theme" id="theme-light" value="light" 
-                                                           <?= $current_theme === 'light' ? 'checked' : '' ?>>
-                                                    <label class="form-check-label w-100" for="theme-light">
-                                                        <div class="d-flex align-items-center mb-2">
+                                            <div class="theme-option-card card <?= $current_theme === 'light' ? 'selected' : '' ?>">
+                                                <div class="card-body p-3">
+                                                    <div class="d-flex align-items-center mb-3">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio" name="theme" id="theme-light" value="light"
+                                                                <?= $current_theme === 'light' ? 'checked' : '' ?>>
+                                                        </div>
+                                                        <label class="theme-card-label ms-2" for="theme-light">
                                                             <i class="fas fa-sun me-2 text-warning"></i>
                                                             <strong>Light Theme</strong>
-                                                        </div>
-                                                        <div class="theme-preview bg-light border p-2 text-center rounded">
-                                                            <div class="bg-white border mb-1 p-1">Light Mode</div>
-                                                            <small class="text-dark">Default bright theme</small>
-                                                        </div>
-                                                    </label>
+                                                        </label>
+                                                    </div>
+                                                    <div class="theme-preview bg-light border p-3 text-center rounded">
+                                                        <div class="bg-white border mb-2 p-2">Light Mode</div>
+                                                        <small class="text-dark">Default bright theme</small>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                         
+                                        <!-- Dark Theme Option -->
                                         <div class="col">
-                                            <div class="form-check card">
-                                                <div class="card-body">
-                                                    <input class="form-check-input" type="radio" name="theme" id="theme-dark" value="dark"
-                                                           <?= $current_theme === 'dark' ? 'checked' : '' ?>>
-                                                    <label class="form-check-label w-100" for="theme-dark">
-                                                        <div class="d-flex align-items-center mb-2">
+                                            <div class="theme-option-card card <?= $current_theme === 'dark' ? 'selected' : '' ?>">
+                                                <div class="card-body p-3">
+                                                    <div class="d-flex align-items-center mb-3">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio" name="theme" id="theme-dark" value="dark"
+                                                                <?= $current_theme === 'dark' ? 'checked' : '' ?>>
+                                                        </div>
+                                                        <label class="theme-card-label ms-2" for="theme-dark">
                                                             <i class="fas fa-moon me-2 text-primary"></i>
                                                             <strong>Dark Theme</strong>
-                                                        </div>
-                                                        <div class="theme-preview bg-dark border p-2 text-center rounded">
-                                                            <div class="bg-secondary border mb-1 p-1 text-white">Dark Mode</div>
-                                                            <small class="text-white">Easier on the eyes at night</small>
-                                                        </div>
-                                                    </label>
+                                                        </label>
+                                                    </div>
+                                                    <div class="theme-preview bg-dark border p-3 text-center rounded">
+                                                        <div class="bg-secondary border mb-2 p-2 text-white">Dark Mode</div>
+                                                        <small class="text-white">Easier on the eyes at night</small>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
